@@ -115,8 +115,6 @@
 
     <script>
         let player = { hp: 20, maxHp: 20, sp: 20, maxSp: 20, poisoned: false, blinded: false };
-        
-        // 新增 lastMove 屬性，用來記憶上一次的攻擊
         let enemies = [
             { id: 0, name: "赫爾墨斯", hp: 50, maxHp: 50, attack: 4, shield: false, isAlive: true, isCharging: false, lastMove: "" },
             { id: 1, name: "深淵蝙蝠", hp: 15, maxHp: 15, attack: 2, shield: false, isAlive: true, isCharging: false, lastMove: "" }
@@ -233,25 +231,46 @@
 
         function setupQteUI(btnText, btnColor, msg) { ui.qteArea.style.display = 'block'; ui.actionBtn.innerText = btnText; ui.actionBtn.style.backgroundColor = btnColor; ui.msgBox.innerText = msg; }
 
+        // --- Delta Time 核心升級 ---
         function startQteAnimation() {
             cursorPosition = 0; isQteActive = true; ui.qteCursor.style.left = cursorPosition + '%';
             
-            function moveCursor() {
+            // 記錄初始時間，使用高精度計時器
+            let lastTime = performance.now();
+            
+            function moveCursor(currentTime) {
                 if (!isQteActive) return; 
+
+                // 計算時間差 (以 60 FPS = 16.66ms 為標準基準)
+                let deltaTime = currentTime - lastTime;
+                lastTime = currentTime;
+                
+                // 防呆機制：如果玩家跳出瀏覽器，deltaTime 會變超大，強制限制最大值避免瞬間飛掉
+                if (deltaTime > 100) deltaTime = 16.66;
+                
+                // 算出時間倍率
+                let timeMultiplier = deltaTime / 16.66;
 
                 if (qteType === 'fakeout' && !fakeoutTriggered && cursorPosition >= 45) {
                     fakeoutTriggered = true; cancelAnimationFrame(qteReq); 
-                    setTimeout(() => { qteSpeed = 3.5; if (isQteActive) qteReq = requestAnimationFrame(moveCursor); }, 500); 
+                    setTimeout(() => { 
+                        qteSpeed = 3.5; 
+                        lastTime = performance.now(); // 暫停結束後重新記錄時間，避免瞬間暴衝
+                        if (isQteActive) qteReq = requestAnimationFrame(moveCursor); 
+                    }, 500); 
                     return;
                 }
 
-                cursorPosition += qteSpeed; ui.qteCursor.style.left = cursorPosition + '%';
+                // 移動距離 = 原本速度 * 時間倍率
+                cursorPosition += (qteSpeed * timeMultiplier); 
+                ui.qteCursor.style.left = cursorPosition + '%';
                 
                 if (cursorPosition >= 100) { 
                     if (qteType === 'multihit' && multiHitCurrent < multiHitMax - 1) {
                         processDefendResult(false, false);
                         if (player.hp === 0) { isQteActive = false; ui.qteArea.style.display = 'none'; setTimeout(() => { ui.msgBox.innerText = "布蕾蒂雅 倒下了... 戰鬥失敗。"; }, 1500); return; }
                         multiHitCurrent++; cursorPosition = 0; ui.msgBox.innerText = `連續攻擊！(第 ${multiHitCurrent + 1} 擊)`;
+                        lastTime = performance.now(); // 連擊重置時也要重置時間
                         qteReq = requestAnimationFrame(moveCursor);
                     } else {
                         isQteActive = false; checkQteResult(); 
@@ -322,8 +341,15 @@
                     if (target.isAlive) {
                         if (target.shield) { finalMsg += `[${target.name}] 護盾抵擋！ `; } 
                         else {
-                            finalMsg += `[${target.name}] -${dmg}HP `; target.hp = Math.max(target.hp - dmg, 0); document.getElementById(`enemy-${target.id}-hp`).innerText = target.hp;
-                            if (target.hp === 0) { target.isAlive = false; document.getElementById(`enemy-${target.id}-box`).style.opacity = '0.3'; }
+                            finalMsg += `[${target.name}] -${dmg}HP `; 
+                            target.hp = Math.max(target.hp - dmg, 0); 
+                            document.getElementById(`enemy-${target.id}-hp`).innerText = target.hp;
+                            if (target.hp === 0) { 
+                                target.isAlive = false; 
+                                let box = document.getElementById(`enemy-${target.id}-box`);
+                                box.style.transform = 'scale(0)'; box.style.opacity = '0';
+                                setTimeout(() => { box.style.display = 'none'; }, 500); 
+                            }
                         }
                     }
                 });
@@ -369,9 +395,7 @@
             if (target.hp === 0) {
                 target.isAlive = false; 
                 let box = document.getElementById(`enemy-${target.id}-box`);
-                box.style.transform = 'scale(0)';
-                box.style.opacity = '0';
-                
+                box.style.transform = 'scale(0)'; box.style.opacity = '0';
                 setTimeout(() => { 
                     box.style.display = 'none'; 
                     ui.msgBox.innerText = `${target.name} 被打倒了！`; 
@@ -404,47 +428,32 @@
             let enemy = enemies[activeEnemyIndex]; executeSingleEnemyAI(enemy);
         }
 
-        // --- 全新防重複 AI 核心 ---
         function executeSingleEnemyAI(enemy) {
             pendingAction = "defend"; qteType = 'normal'; qteSpeed = 1.2; fakeoutTriggered = false; multiHitCurrent = 0; multiHitMax = 1;
             updatePlayerStatus(); 
 
             if (enemy.name === "赫爾墨斯") {
-                // 如果已經蓄力了，強制發動大招
                 if (enemy.isCharging) {
                     enemy.isCharging = false; document.getElementById(`enemy-${enemy.id}-status`).innerText = "";
-                    enemy.lastMove = "ultimate"; // 紀錄大招
-                    
+                    enemy.lastMove = "ultimate"; 
                     currentEnemyAttack = { name: "深淵制裁", dmg: 12, appliesPoison: false, isUltimate: true }; 
                     qteSpeed = 4.0; 
                     ui.msgBox.innerText = `赫爾墨斯 釋放了【深淵制裁】！\n(危險！極速重擊！)`;
-                    
                     setTimeout(() => { 
                         configureQteZones('defend'); 
-                        targetStart = 65; targetEnd = 85; 
-                        perfectStart = 73; perfectEnd = 77; 
-                        ui.mainZone.style.left = '65%'; ui.mainZone.style.width = '20%';
-                        ui.perfectZone.style.left = '73%'; ui.perfectZone.style.width = '4%';
-                        setupQteUI("防禦 / 閃避！", "#e74c3c", `毀滅一擊！`); 
-                        startQteAnimation(); 
+                        targetStart = 65; targetEnd = 85; perfectStart = 73; perfectEnd = 77; 
+                        ui.mainZone.style.left = '65%'; ui.mainZone.style.width = '20%'; ui.perfectZone.style.left = '73%'; ui.perfectZone.style.width = '4%';
+                        setupQteUI("防禦 / 閃避！", "#e74c3c", `毀滅一擊！`); startQteAnimation(); 
                     }, 2000);
-                    return; // 發動大招後直接結束邏輯
+                    return; 
                 }
                 
-                // 決定可以出什麼招
                 let moves = ["charge", "fakeout", "poison"];
-                if (!enemy.shield) moves.push("shield"); // 如果沒盾，才可以開盾
-
-                // 【防重複機制】：強制刪除上一回合用過的招式
-                if (moves.includes(enemy.lastMove) && moves.length > 1) {
-                    moves = moves.filter(m => m !== enemy.lastMove);
-                }
-
-                // 從剩下的招式中隨機抽一個
+                if (!enemy.shield) moves.push("shield"); 
+                if (moves.includes(enemy.lastMove) && moves.length > 1) { moves = moves.filter(m => m !== enemy.lastMove); }
                 let chosen = moves[Math.floor(Math.random() * moves.length)];
-                enemy.lastMove = chosen; // 記錄下來給下回合看
+                enemy.lastMove = chosen; 
 
-                // 根據抽到的招式執行
                 if (chosen === "shield") {
                     enemy.shield = true; document.getElementById(`enemy-${enemy.id}-status`).innerText = "[護盾保護中]";
                     ui.msgBox.innerText = `赫爾墨斯 舉起護盾！一般攻擊無效！`; activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 2000); 
@@ -466,11 +475,8 @@
             } 
             else if (enemy.name === "深淵蝙蝠") {
                 let moves = ["multihit", "fast"];
-                if (!player.blinded) moves.push("blind"); // 沒瞎才能吐毒霧
-
-                if (moves.includes(enemy.lastMove) && moves.length > 1) {
-                    moves = moves.filter(m => m !== enemy.lastMove);
-                }
+                if (!player.blinded) moves.push("blind"); 
+                if (moves.includes(enemy.lastMove) && moves.length > 1) { moves = moves.filter(m => m !== enemy.lastMove); }
                 let chosen = moves[Math.floor(Math.random() * moves.length)];
                 enemy.lastMove = chosen;
 
@@ -493,4 +499,4 @@
     </script>
 </body>
 </html>
-                                                                                                                                                                                                                                   }
+                                                                                                                                                                                             }
