@@ -44,7 +44,7 @@
     </style>
 </head>
 <body>
-    <h1>終極挑戰：盲目、快慢刀與蓄力</h1>
+    <h1>終極挑戰：防爆衝 QTE 引擎</h1>
     <div class="battle-stage">
         <div class="character-box">
             <h2 class="name-title">布蕾蒂雅</h2>
@@ -231,37 +231,48 @@
 
         function setupQteUI(btnText, btnColor, msg) { ui.qteArea.style.display = 'block'; ui.actionBtn.innerText = btnText; ui.actionBtn.style.backgroundColor = btnColor; ui.msgBox.innerText = msg; }
 
-        // --- Delta Time 核心升級 ---
+        // ----------------------------------------------------
+        // 核心升級：防爆衝、防幽靈雙重引擎
+        // ----------------------------------------------------
         function startQteAnimation() {
-            cursorPosition = 0; isQteActive = true; ui.qteCursor.style.left = cursorPosition + '%';
+            // 1. 強制斬斷任何潛在的幽靈迴圈，確保永遠只有一個 QTE 在跑
+            if (qteReq) cancelAnimationFrame(qteReq); 
             
-            // 記錄初始時間，使用高精度計時器
-            let lastTime = performance.now();
+            cursorPosition = 0; 
+            isQteActive = true; 
+            ui.qteCursor.style.left = cursorPosition + '%';
+            
+            let lastTime = 0; // 統一使用 rAF 傳進來的時間
             
             function moveCursor(currentTime) {
                 if (!isQteActive) return; 
 
-                // 計算時間差 (以 60 FPS = 16.66ms 為標準基準)
+                // 2. 第一幀絕對安全機制：只紀錄時間，不移動游標
+                if (!lastTime) {
+                    lastTime = currentTime;
+                    qteReq = requestAnimationFrame(moveCursor);
+                    return;
+                }
+
                 let deltaTime = currentTime - lastTime;
                 lastTime = currentTime;
                 
-                // 防呆機制：如果玩家跳出瀏覽器，deltaTime 會變超大，強制限制最大值避免瞬間飛掉
-                if (deltaTime > 100) deltaTime = 16.66;
+                // 3. 嚴格的時間鎖定：如果卡頓超過 50 毫秒，強制當作標準的一幀處理
+                if (deltaTime > 50) deltaTime = 16.66;
                 
-                // 算出時間倍率
                 let timeMultiplier = deltaTime / 16.66;
 
+                // 快慢刀機制
                 if (qteType === 'fakeout' && !fakeoutTriggered && cursorPosition >= 45) {
                     fakeoutTriggered = true; cancelAnimationFrame(qteReq); 
                     setTimeout(() => { 
                         qteSpeed = 3.5; 
-                        lastTime = performance.now(); // 暫停結束後重新記錄時間，避免瞬間暴衝
+                        lastTime = 0; // 重點！暫停結束後一定要重置時間，不然復甦的第一幀會瞬間爆衝
                         if (isQteActive) qteReq = requestAnimationFrame(moveCursor); 
                     }, 500); 
                     return;
                 }
 
-                // 移動距離 = 原本速度 * 時間倍率
                 cursorPosition += (qteSpeed * timeMultiplier); 
                 ui.qteCursor.style.left = cursorPosition + '%';
                 
@@ -270,7 +281,7 @@
                         processDefendResult(false, false);
                         if (player.hp === 0) { isQteActive = false; ui.qteArea.style.display = 'none'; setTimeout(() => { ui.msgBox.innerText = "布蕾蒂雅 倒下了... 戰鬥失敗。"; }, 1500); return; }
                         multiHitCurrent++; cursorPosition = 0; ui.msgBox.innerText = `連續攻擊！(第 ${multiHitCurrent + 1} 擊)`;
-                        lastTime = performance.now(); // 連擊重置時也要重置時間
+                        lastTime = 0; // 重點！連續攻擊重置時也要重置時間
                         qteReq = requestAnimationFrame(moveCursor);
                     } else {
                         isQteActive = false; checkQteResult(); 
@@ -280,6 +291,7 @@
             }
             qteReq = requestAnimationFrame(moveCursor);
         }
+        // ----------------------------------------------------
 
         function checkQte() { 
             if (!isQteActive) return; 
@@ -499,4 +511,4 @@
     </script>
 </body>
 </html>
-                                                                                                                                                                                             }
+                                                                                                                                                     }
