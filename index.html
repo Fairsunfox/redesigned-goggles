@@ -7,7 +7,10 @@
     <style>
         body { background-color: #2b2b2b; color: white; font-family: sans-serif; text-align: center; margin-top: 20px; touch-action: manipulation; }
         .battle-stage { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 20px; }
-        .character-box { border: 2px solid #ccc; border-radius: 10px; padding: 10px; width: 130px; background-color: #3a3a3a; transition: opacity 0.3s; }
+        
+        /* 魔改：加入 transform 和 all 的轉場動畫，讓死亡時有縮小消失的效果 */
+        .character-box { border: 2px solid #ccc; border-radius: 10px; padding: 10px; width: 130px; background-color: #3a3a3a; transition: all 0.5s ease; transform-origin: center; }
+        
         .enemies-container { display: flex; flex-direction: column; gap: 10px; }
         .name-title { font-size: 16px; margin: 5px 0; }
         .hp-text { color: #ff6b6b; font-weight: bold; font-size: 16px; }
@@ -50,7 +53,7 @@
             <h2 class="name-title">布蕾蒂雅</h2>
             <div class="status-player" id="player-status"></div>
             <p style="margin: 5px 0;">HP: <span class="hp-text" id="player-hp">20</span> / 20</p>
-            <p style="margin: 5px 0;">SP: <span class="sp-text" id="player-sp">40</span> / 40</p>
+            <p style="margin: 5px 0;">SP: <span class="sp-text" id="player-sp">20</span> / 20</p>
         </div>
         <div class="enemies-container">
             <div class="character-box" id="enemy-0-box">
@@ -86,9 +89,9 @@
         </div>
 
         <div id="item-menu">
-            <button class="btn-item" onpointerdown="useItem('potion')">回復藥 (<span id="potion-count">3</span>)</button>
-            <button class="btn-item" onpointerdown="useItem('ether')">魔法水 (<span id="ether-count">2</span>)</button>
-            <button class="btn-item" onpointerdown="useItem('antidote')">解毒草 (<span id="antidote-count">2</span>)</button>
+            <button class="btn-item" onpointerdown="useItem('potion')">回復藥 (<span id="potion-count">5</span>)</button>
+            <button class="btn-item" onpointerdown="useItem('ether')">魔法水 (<span id="ether-count">5</span>)</button>
+            <button class="btn-item" onpointerdown="useItem('antidote')">解毒草 (<span id="antidote-count">3</span>)</button>
             <button class="btn-back" onpointerdown="closeSubMenus()">返回</button>
         </div>
 
@@ -103,6 +106,218 @@
             </div>
             <button id="action-btn" onpointerdown="checkQte()">動作！</button>
         </div>
+
+        <div id="mash-area">
+            <div class="mash-bar-container">
+                <div id="mash-fill"></div>
+            </div>
+            <div id="mash-timer-text">2.0 秒</div>
+            <button id="mash-btn" onpointerdown="doMash()">瘋狂連打！</button>
+        </div>
+    </div>
+
+    <script>
+        let player = { hp: 20, maxHp: 20, sp: 20, maxSp: 20, poisoned: false, blinded: false };
+        let enemies = [
+            { id: 0, name: "赫爾墨斯", hp: 50, maxHp: 50, attack: 4, shield: false, isAlive: true, isCharging: false },
+            { id: 1, name: "深淵蝙蝠", hp: 15, maxHp: 15, attack: 2, shield: false, isAlive: true, isCharging: false }
+        ];
+        
+        let baseAttack = 3, skillBaseAttack = 3, skillCost = 4, qteBonus = 2, aoeBaseAttack = 2, aoeCost = 6; 
+        let inventory = { potion: { count: 5, healHp: 10, name: "回復藥" }, ether: { count: 5, healSp: 15, name: "魔法水" }, antidote: { count: 3, name: "解毒草" } };
+
+        const ui = {
+            playerHp: document.getElementById('player-hp'), playerSp: document.getElementById('player-sp'), playerStatus: document.getElementById('player-status'),
+            msgBox: document.getElementById('message-box'), actionMenu: document.getElementById('action-menu'),
+            skillMenu: document.getElementById('skill-menu'), itemMenu: document.getElementById('item-menu'), 
+            targetMenu: document.getElementById('target-menu'), targetBtns: document.getElementById('target-buttons'),
+            qteArea: document.getElementById('qte-area'), qteBar: document.getElementById('qte-bar-main'), qteCursor: document.getElementById('qte-cursor'), actionBtn: document.getElementById('action-btn'),
+            mainZone: document.getElementById('qte-main-zone'), perfectZone: document.getElementById('qte-perfect-zone'),
+            aoeZones: [document.getElementById('aoe-zone-1'), document.getElementById('aoe-zone-2'), document.getElementById('aoe-zone-3')],
+            mashArea: document.getElementById('mash-area'), mashFill: document.getElementById('mash-fill'), mashTimer: document.getElementById('mash-timer-text')
+        };
+
+        let cursorPosition = 0, qteReq, isQteActive = false;
+        let pendingAction = "", currentTargetIndex = 0, activeEnemyIndex = 0;
+        let targetStart = 0, targetEnd = 0, perfectStart = 0, perfectEnd = 0;
+        let aoeHitStatus = [false, false, false], aoeHitCount = 0;
+        let mashCount = 0, mashTimeLeft = 2000, mashInterval, isMashing = false;
+
+        let qteSpeed = 1.2;
+        let qteType = 'normal'; 
+        let fakeoutTriggered = false;
+        let multiHitCurrent = 0;
+        let multiHitMax = 1;
+        let currentEnemyAttack = {};
+
+        function updatePlayerStatus() {
+            let statusStr = "";
+            if (player.poisoned) statusStr += "[中毒] ";
+            if (player.blinded) statusStr += "[盲目] ";
+            ui.playerStatus.innerText = statusStr;
+            
+            if (player.blinded) ui.qteBar.classList.add('blind-mode');
+            else ui.qteBar.classList.remove('blind-mode');
+        }
+
+        function openSkillMenu() { ui.actionMenu.style.display = 'none'; ui.skillMenu.style.display = 'block'; ui.msgBox.innerText = "請選擇技能。"; }
+        function openItemMenu() { ui.actionMenu.style.display = 'none'; ui.itemMenu.style.display = 'block'; ui.msgBox.innerText = "請選擇道具。"; }
+        function closeSubMenus() { ui.skillMenu.style.display = 'none'; ui.itemMenu.style.display = 'none'; ui.targetMenu.style.display = 'none'; ui.actionMenu.style.display = 'block'; ui.msgBox.innerText = "請選擇行動。"; }
+
+        function useItem(itemType) {
+            let item = inventory[itemType];
+            if (item.count <= 0) { ui.msgBox.innerText = `背包裡的 ${item.name} 已經用完了！`; return; }
+            item.count--; document.getElementById(`${itemType}-count`).innerText = item.count; ui.itemMenu.style.display = 'none';
+            
+            if (itemType === 'potion') { player.hp = Math.min(player.hp + item.healHp, player.maxHp); ui.playerHp.innerText = player.hp; ui.msgBox.innerText = `回復了 ${item.healHp} 點 HP。`; } 
+            else if (itemType === 'ether') { player.sp = Math.min(player.sp + item.healSp, player.maxSp); ui.playerSp.innerText = player.sp; ui.msgBox.innerText = `回復了 ${item.healSp} 點 SP。`; } 
+            else if (itemType === 'antidote') {
+                if (player.poisoned || player.blinded) { 
+                    player.poisoned = false; player.blinded = false; updatePlayerStatus(); 
+                    ui.msgBox.innerText = `所有異常狀態被淨化了！`; 
+                } 
+                else { ui.msgBox.innerText = `吃了解毒草，但什麼事也沒發生。`; }
+            }
+            setTimeout(startEnemyPhase, 1500); 
+        }
+
+        function startAction(action) {
+            if (action === 'skill' && player.sp < skillCost) { ui.msgBox.innerText = "SP 不足！無法施展破甲擊。"; return; }
+            if (action === 'aoe' && player.sp < aoeCost) { ui.msgBox.innerText = "SP 不足！無法施展星空爆發。"; return; }
+            
+            pendingAction = action; ui.actionMenu.style.display = 'none'; ui.skillMenu.style.display = 'none';
+
+            if (action === 'aoe') {
+                player.sp -= aoeCost; ui.playerSp.innerText = player.sp;
+                configureQteZones('aoe'); setupQteUI("點擊！", "#f39c12", `施展【星空爆發】！\n(游標經過區域時連續點擊！)`);
+                qteSpeed = 1.2; qteType = 'normal'; startQteAnimation(); return;
+            }
+
+            ui.targetMenu.style.display = 'block'; ui.msgBox.innerText = "請選擇攻擊目標：";
+            ui.targetBtns.innerHTML = '';
+            enemies.forEach((en, idx) => {
+                if (en.isAlive) {
+                    let btn = document.createElement('button'); btn.className = 'btn-attack'; btn.innerText = en.name;
+                    btn.onpointerdown = () => confirmTarget(idx); ui.targetBtns.appendChild(btn);
+                }
+            });
+            let backBtn = document.createElement('button'); backBtn.className = 'btn-back'; backBtn.innerText = "返回";
+            backBtn.onpointerdown = closeSubMenus; ui.targetBtns.appendChild(backBtn);
+        }
+
+        function confirmTarget(index) {
+            currentTargetIndex = index; ui.targetMenu.style.display = 'none';
+            if (pendingAction === 'skill') {
+                player.sp -= skillCost; ui.playerSp.innerText = player.sp;
+                ui.msgBox.innerText = `對 ${enemies[index].name} 施展【破甲擊】！\n(2秒內瘋狂連打集氣！)`; startMashQte(); 
+            } else {
+                configureQteZones('attack'); setupQteUI("打擊！", "#ff9f43", `準備攻擊 ${enemies[index].name}！\n(進入區域時點擊)`); 
+                qteSpeed = 1.2; qteType = 'normal'; startQteAnimation(); 
+            }
+        }
+
+        function configureQteZones(type) {
+            ui.mainZone.style.display = 'none'; ui.perfectZone.style.display = 'none';
+            ui.aoeZones.forEach(z => { z.style.display = 'none'; z.style.backgroundColor = '#2ecc71'; });
+
+            if (type === 'attack') {
+                targetStart = 70; targetEnd = 90; perfectStart = -1; perfectEnd = -1; 
+                ui.mainZone.style.left = '70%'; ui.mainZone.style.width = '20%'; ui.mainZone.style.backgroundColor = '#2ecc71'; ui.mainZone.style.display = 'block';
+            } else if (type === 'defend') {
+                targetStart = 60; targetEnd = 95; perfectStart = 75; perfectEnd = 81; 
+                ui.mainZone.style.left = '60%'; ui.mainZone.style.width = '35%'; ui.mainZone.style.backgroundColor = '#3498db'; ui.mainZone.style.display = 'block'; 
+                ui.perfectZone.style.display = 'block'; ui.perfectZone.style.left = '75%'; ui.perfectZone.style.width = '6%'; ui.perfectZone.style.backgroundColor = '#f1c40f'; 
+            } else if (type === 'aoe') {
+                ui.aoeZones.forEach(z => z.style.display = 'block'); aoeHitStatus = [false, false, false]; aoeHitCount = 0;
+            }
+        }
+
+        function setupQteUI(btnText, btnColor, msg) { ui.qteArea.style.display = 'block'; ui.actionBtn.innerText = btnText; ui.actionBtn.style.backgroundColor = btnColor; ui.msgBox.innerText = msg; }
+
+        function startQteAnimation() {
+            cursorPosition = 0; isQteActive = true; ui.qteCursor.style.left = cursorPosition + '%';
+            
+            function moveCursor() {
+                if (!isQteActive) return; 
+
+                if (qteType === 'fakeout' && !fakeoutTriggered && cursorPosition >= 45) {
+                    fakeoutTriggered = true; cancelAnimationFrame(qteReq); 
+                    setTimeout(() => { qteSpeed = 3.5; if (isQteActive) qteReq = requestAnimationFrame(moveCursor); }, 500); 
+                    return;
+                }
+
+                cursorPosition += qteSpeed; ui.qteCursor.style.left = cursorPosition + '%';
+                
+                if (cursorPosition >= 100) { 
+                    if (qteType === 'multihit' && multiHitCurrent < multiHitMax - 1) {
+                        processDefendResult(false, false);
+                        if (player.hp === 0) { isQteActive = false; ui.qteArea.style.display = 'none'; setTimeout(() => { ui.msgBox.innerText = "布蕾蒂雅 倒下了... 戰鬥失敗。"; }, 1500); return; }
+                        multiHitCurrent++; cursorPosition = 0; ui.msgBox.innerText = `連續攻擊！(第 ${multiHitCurrent + 1} 擊)`;
+                        qteReq = requestAnimationFrame(moveCursor);
+                    } else {
+                        isQteActive = false; checkQteResult(); 
+                    }
+                } 
+                else { qteReq = requestAnimationFrame(moveCursor); }
+            }
+            qteReq = requestAnimationFrame(moveCursor);
+        }
+
+        function checkQte() { 
+            if (!isQteActive) return; 
+            
+            if (pendingAction === 'aoe') {
+                let hitAny = false;
+                if (cursorPosition >= 20 && cursorPosition <= 30 && !aoeHitStatus[0]) { aoeHitStatus[0] = true; ui.aoeZones[0].style.backgroundColor = '#f1c40f'; hitAny = true; } 
+                else if (cursorPosition >= 50 && cursorPosition <= 60 && !aoeHitStatus[1]) { aoeHitStatus[1] = true; ui.aoeZones[1].style.backgroundColor = '#f1c40f'; hitAny = true; } 
+                else if (cursorPosition >= 80 && cursorPosition <= 90 && !aoeHitStatus[2]) { aoeHitStatus[2] = true; ui.aoeZones[2].style.backgroundColor = '#f1c40f'; hitAny = true; }
+                if (hitAny) { aoeHitCount++; }
+            } else if (pendingAction === 'defend' && qteType === 'multihit') {
+                let isPerfect = (cursorPosition >= perfectStart && cursorPosition <= perfectEnd);
+                let isSuccess = (cursorPosition >= targetStart && cursorPosition <= targetEnd);
+                processDefendResult(isSuccess, isPerfect);
+
+                if (player.hp === 0) { isQteActive = false; cancelAnimationFrame(qteReq); ui.qteArea.style.display = 'none'; setTimeout(() => { ui.msgBox.innerText = "布蕾蒂雅 倒下了... 戰鬥失敗。"; }, 1500); return; }
+                
+                if (multiHitCurrent < multiHitMax - 1) {
+                    multiHitCurrent++; cursorPosition = 0; ui.msgBox.innerText = `連續攻擊！(第 ${multiHitCurrent + 1} 擊)`;
+                } else {
+                    isQteActive = false; cancelAnimationFrame(qteReq); ui.qteArea.style.display = 'none'; setTimeout(() => { activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 1500); }, 1000);
+                }
+            } else {
+                isQteActive = false; cancelAnimationFrame(qteReq); checkQteResult(); 
+            }
+        }
+
+        function processDefendResult(isSuccess, isPerfect) {
+            let baseAttackDmg = currentEnemyAttack.dmg;
+            let dmgTaken = 0;
+
+            if (isPerfect) { ui.msgBox.innerText = `💫 極限閃避！受到 0 點傷害。`; dmgTaken = 0; } 
+            else if (isSuccess) { 
+                dmgTaken = Math.max(baseAttackDmg - qteBonus, 0); 
+                if (currentEnemyAttack.isUltimate) dmgTaken = Math.floor(baseAttackDmg / 2); 
+                ui.msgBox.innerText = `🛡️ 成功防禦！受到了 ${dmgTaken} 點傷害。`; 
+            } 
+            else { dmgTaken = baseAttackDmg; ui.msgBox.innerText = `💥 命中！受到了 ${dmgTaken} 點傷害。`; }
+
+            if (currentEnemyAttack.appliesPoison && !isPerfect && !player.poisoned) { player.poisoned = true; updatePlayerStatus(); ui.msgBox.innerText += `\n布蕾蒂雅 中毒了！`; }
+
+            player.hp = Math.max(player.hp - dmgTaken, 0); ui.playerHp.innerText = player.hp;
+        }
+
+        // --- 重大修改：敵人擊殺後徹底從版面消失 ---
+        function checkQteResult() {
+            ui.qteArea.style.display = 'none'; 
+            if (pendingAction === "attack") {
+                let isSuccess = (cursorPosition >= targetStart && cursorPosition <= targetEnd);
+                let target = enemies[currentTargetIndex];
+                if (target.shield) { ui.msgBox.innerText = `攻擊被彈開！${target.name} 有護盾保護。`; setTimeout(checkWinCondition, 2000); return; }
+                let dmg = baseAttack + (isSuccess ? qteBonus : 0);
+                ui.msgBox.innerText = isSuccess ? `會心一擊！對 ${target.name} 造成 ${dmg} 點傷害。` : `普通攻擊。對 ${target.name} 造成 ${dmg} 點傷害。`;
+                applyDamageToTarget(target, dmg);
+            } 
+            else if (p        </div>
 
         <div id="mash-area">
             <div class="mash-bar-container">
