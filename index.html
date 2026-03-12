@@ -7,10 +7,7 @@
     <style>
         body { background-color: #2b2b2b; color: white; font-family: sans-serif; text-align: center; margin-top: 20px; touch-action: manipulation; }
         .battle-stage { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 20px; }
-        
-        /* 魔改：加入 transform 和 all 的轉場動畫，讓死亡時有縮小消失的效果 */
         .character-box { border: 2px solid #ccc; border-radius: 10px; padding: 10px; width: 130px; background-color: #3a3a3a; transition: all 0.5s ease; transform-origin: center; }
-        
         .enemies-container { display: flex; flex-direction: column; gap: 10px; }
         .name-title { font-size: 16px; margin: 5px 0; }
         .hp-text { color: #ff6b6b; font-weight: bold; font-size: 16px; }
@@ -118,9 +115,11 @@
 
     <script>
         let player = { hp: 20, maxHp: 20, sp: 20, maxSp: 20, poisoned: false, blinded: false };
+        
+        // 新增 lastMove 屬性，用來記憶上一次的攻擊
         let enemies = [
-            { id: 0, name: "赫爾墨斯", hp: 50, maxHp: 50, attack: 4, shield: false, isAlive: true, isCharging: false },
-            { id: 1, name: "深淵蝙蝠", hp: 15, maxHp: 15, attack: 2, shield: false, isAlive: true, isCharging: false }
+            { id: 0, name: "赫爾墨斯", hp: 50, maxHp: 50, attack: 4, shield: false, isAlive: true, isCharging: false, lastMove: "" },
+            { id: 1, name: "深淵蝙蝠", hp: 15, maxHp: 15, attack: 2, shield: false, isAlive: true, isCharging: false, lastMove: "" }
         ];
         
         let baseAttack = 3, skillBaseAttack = 3, skillCost = 4, qteBonus = 2, aoeBaseAttack = 2, aoeCost = 6; 
@@ -306,7 +305,6 @@
             player.hp = Math.max(player.hp - dmgTaken, 0); ui.playerHp.innerText = player.hp;
         }
 
-        // --- 重大修改：敵人擊殺後徹底從版面消失 ---
         function checkQteResult() {
             ui.qteArea.style.display = 'none'; 
             if (pendingAction === "attack") {
@@ -324,18 +322,8 @@
                     if (target.isAlive) {
                         if (target.shield) { finalMsg += `[${target.name}] 護盾抵擋！ `; } 
                         else {
-                            finalMsg += `[${target.name}] -${dmg}HP `; 
-                            target.hp = Math.max(target.hp - dmg, 0); 
-                            document.getElementById(`enemy-${target.id}-hp`).innerText = target.hp;
-                            
-                            // AoE 判定敵人是否死亡，如果死了就播放消失動畫
-                            if (target.hp === 0) { 
-                                target.isAlive = false; 
-                                let box = document.getElementById(`enemy-${target.id}-box`);
-                                box.style.transform = 'scale(0)';
-                                box.style.opacity = '0';
-                                setTimeout(() => { box.style.display = 'none'; }, 500); // 0.5秒後徹底移除排版
-                            }
+                            finalMsg += `[${target.name}] -${dmg}HP `; target.hp = Math.max(target.hp - dmg, 0); document.getElementById(`enemy-${target.id}-hp`).innerText = target.hp;
+                            if (target.hp === 0) { target.isAlive = false; document.getElementById(`enemy-${target.id}-box`).style.opacity = '0.3'; }
                         }
                     }
                 });
@@ -376,7 +364,6 @@
             applyDamageToTarget(target, totalDmg);
         }
 
-        // --- 單體攻擊的消失動畫結算 ---
         function applyDamageToTarget(target, dmg) {
             target.hp = Math.max(target.hp - dmg, 0); document.getElementById(`enemy-${target.id}-hp`).innerText = target.hp;
             if (target.hp === 0) {
@@ -386,7 +373,7 @@
                 box.style.opacity = '0';
                 
                 setTimeout(() => { 
-                    box.style.display = 'none'; // 動畫播完後徹底移除排版
+                    box.style.display = 'none'; 
                     ui.msgBox.innerText = `${target.name} 被打倒了！`; 
                     setTimeout(checkWinCondition, 1500); 
                 }, 500);
@@ -417,14 +404,17 @@
             let enemy = enemies[activeEnemyIndex]; executeSingleEnemyAI(enemy);
         }
 
+        // --- 全新防重複 AI 核心 ---
         function executeSingleEnemyAI(enemy) {
-            let moveRoll = Math.random(); 
             pendingAction = "defend"; qteType = 'normal'; qteSpeed = 1.2; fakeoutTriggered = false; multiHitCurrent = 0; multiHitMax = 1;
             updatePlayerStatus(); 
 
             if (enemy.name === "赫爾墨斯") {
+                // 如果已經蓄力了，強制發動大招
                 if (enemy.isCharging) {
                     enemy.isCharging = false; document.getElementById(`enemy-${enemy.id}-status`).innerText = "";
+                    enemy.lastMove = "ultimate"; // 紀錄大招
+                    
                     currentEnemyAttack = { name: "深淵制裁", dmg: 12, appliesPoison: false, isUltimate: true }; 
                     qteSpeed = 4.0; 
                     ui.msgBox.innerText = `赫爾墨斯 釋放了【深淵制裁】！\n(危險！極速重擊！)`;
@@ -438,37 +428,62 @@
                         setupQteUI("防禦 / 閃避！", "#e74c3c", `毀滅一擊！`); 
                         startQteAnimation(); 
                     }, 2000);
+                    return; // 發動大招後直接結束邏輯
                 }
-                else if (moveRoll < 0.2 && !enemy.shield) {
+                
+                // 決定可以出什麼招
+                let moves = ["charge", "fakeout", "poison"];
+                if (!enemy.shield) moves.push("shield"); // 如果沒盾，才可以開盾
+
+                // 【防重複機制】：強制刪除上一回合用過的招式
+                if (moves.includes(enemy.lastMove) && moves.length > 1) {
+                    moves = moves.filter(m => m !== enemy.lastMove);
+                }
+
+                // 從剩下的招式中隨機抽一個
+                let chosen = moves[Math.floor(Math.random() * moves.length)];
+                enemy.lastMove = chosen; // 記錄下來給下回合看
+
+                // 根據抽到的招式執行
+                if (chosen === "shield") {
                     enemy.shield = true; document.getElementById(`enemy-${enemy.id}-status`).innerText = "[護盾保護中]";
                     ui.msgBox.innerText = `赫爾墨斯 舉起護盾！一般攻擊無效！`; activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 2000); 
                 }
-                else if (moveRoll < 0.4) {
+                else if (chosen === "charge") {
                     enemy.isCharging = true; document.getElementById(`enemy-${enemy.id}-status`).innerText = "[蓄力中]";
                     ui.msgBox.innerText = `赫爾墨斯 正在凝聚深淵的魔力...\n(下回合將發動毀滅攻擊！)`; activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 2000); 
                 }
-                else if (moveRoll < 0.7) {
+                else if (chosen === "fakeout") {
                     qteType = 'fakeout'; currentEnemyAttack = { name: "欺詐重劈", dmg: 6, appliesPoison: false };
                     ui.msgBox.innerText = `赫爾墨斯 高舉武器...\n(小心快慢刀！)`;
                     setTimeout(() => { configureQteZones('defend'); setupQteUI("防禦 / 閃避！", "#3498db", `看準時機！`); startQteAnimation(); }, 1500);
                 }
-                else {
+                else if (chosen === "poison") {
                     currentEnemyAttack = { name: "毒刃", dmg: 4, appliesPoison: true };
                     ui.msgBox.innerText = `赫爾墨斯 揮出帶毒的利刃！\n(準備防禦...)`;
                     setTimeout(() => { configureQteZones('defend'); setupQteUI("防禦 / 閃避！", "#3498db", `毒刃襲來！`); startQteAnimation(); }, 1500);
                 }
             } 
             else if (enemy.name === "深淵蝙蝠") {
-                if (moveRoll < 0.3 && !player.blinded) {
+                let moves = ["multihit", "fast"];
+                if (!player.blinded) moves.push("blind"); // 沒瞎才能吐毒霧
+
+                if (moves.includes(enemy.lastMove) && moves.length > 1) {
+                    moves = moves.filter(m => m !== enemy.lastMove);
+                }
+                let chosen = moves[Math.floor(Math.random() * moves.length)];
+                enemy.lastMove = chosen;
+
+                if (chosen === "blind") {
                     player.blinded = true; updatePlayerStatus();
                     ui.msgBox.innerText = `深淵蝙蝠 吐出了盲目毒霧！\n布蕾蒂雅 的視線被遮蔽了！`; activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 2000); 
                 }
-                else if (moveRoll < 0.6) {
+                else if (chosen === "multihit") {
                     qteType = 'multihit'; multiHitMax = 3; qteSpeed = 1.5; currentEnemyAttack = { name: "瘋狂亂抓", dmg: 2, appliesPoison: false };
                     ui.msgBox.innerText = `深淵蝙蝠 發動【瘋狂亂抓】！\n(連續防禦 3 次！)`;
                     setTimeout(() => { configureQteZones('defend'); setupQteUI("連續防禦！", "#3498db", `攻擊！(第 1 擊)`); startQteAnimation(); }, 1500);
                 }
-                else {
+                else if (chosen === "fast") {
                     qteSpeed = 2.5; currentEnemyAttack = { name: "急速俯衝", dmg: 3, appliesPoison: false };
                     ui.msgBox.innerText = `深淵蝙蝠 急速俯衝！\n(太快了！)`;
                     setTimeout(() => { configureQteZones('defend'); setupQteUI("防禦 / 閃避！", "#3498db", `快速攻擊襲來！`); startQteAnimation(); }, 1500);
@@ -478,4 +493,4 @@
     </script>
 </body>
 </html>
-                                                                                                                                                                                                                                                                 }
+                                                                                                                                                                                                                                   }
