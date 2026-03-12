@@ -1,58 +1,65 @@
-<!DOCTYPE html>                                                                                                                 .btn-back { background-color: #7f8c8d; color: #fff; }
-                                                                                                                                                                                    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Paper Mario 極限閃避測試</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>回合制策略與多重 QTE 戰鬥系統</title>
     <style>
-        body { background-color: #2b2b2b; color: white; font-family: sans-serif; text-align: center; margin-top: 30px; }
-        .battle-stage { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; }
-        .character-box { border: 2px solid #ccc; border-radius: 10px; padding: 15px; width: 130px; background-color: #3a3a3a; }
-        
-        .hp-text { color: #ff6b6b; font-weight: bold; font-size: 18px; }
-        .sp-text { color: #54a0ff; font-weight: bold; font-size: 18px; }
-        .status-text { color: #feca57; font-weight: bold; font-size: 14px; min-height: 20px; }
-        
-        .ui-panel { border: 2px solid #aaa; padding: 20px; width: 85%; max-width: 400px; margin: 0 auto; border-radius: 10px; background-color: #1e1e1e; min-height: 150px; }
-        #message-box { font-size: 16px; margin-bottom: 20px; color: #feca57; min-height: 40px; white-space: pre-line; }
-        
-        button { padding: 10px 15px; font-size: 16px; cursor: pointer; border-radius: 5px; border: none; font-weight: bold; margin: 5px; }
-        
-        #action-menu { display: block; }
-        #item-menu { display: none; }
-        
+        body { background-color: #2b2b2b; color: white; font-family: sans-serif; text-align: center; margin-top: 20px; touch-action: manipulation; }
+        .battle-stage { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .character-box { border: 2px solid #ccc; border-radius: 10px; padding: 10px; width: 130px; background-color: #3a3a3a; transition: opacity 0.3s; }
+        .enemies-container { display: flex; flex-direction: column; gap: 10px; }
+        .name-title { font-size: 16px; margin: 5px 0; }
+        .hp-text { color: #ff6b6b; font-weight: bold; font-size: 16px; }
+        .sp-text { color: #54a0ff; font-weight: bold; font-size: 16px; }
+        .status-shield { color: #feca57; font-weight: bold; font-size: 12px; min-height: 16px; }
+        .status-poison { color: #9b59b6; font-weight: bold; font-size: 14px; min-height: 20px; }
+        .ui-panel { border: 2px solid #aaa; padding: 15px; width: 90%; max-width: 450px; margin: 0 auto; border-radius: 10px; background-color: #1e1e1e; min-height: 160px; }
+        #message-box { font-size: 15px; margin-bottom: 15px; color: #feca57; min-height: 40px; white-space: pre-line; }
+        button { padding: 8px 12px; font-size: 15px; cursor: pointer; border-radius: 5px; border: none; font-weight: bold; margin: 4px; outline: none; -webkit-tap-highlight-color: transparent; }
+        #action-menu { display: flex; flex-wrap: wrap; justify-content: center; }
+        #skill-menu, #item-menu, #target-menu, #qte-area, #mash-area { display: none; }
         .btn-attack { background-color: #48dbfb; color: #000; }
-        .btn-skill { background-color: #9b59b6; color: #fff; }
+        .btn-skill-main { background-color: #9b59b6; color: #fff; } 
+        .btn-skill { background-color: #8e44ad; color: #fff; }     
+        .btn-aoe { background-color: #f39c12; color: #fff; }       
         .btn-item { background-color: #2ecc71; color: #000; }
         .btn-back { background-color: #7f8c8d; color: #fff; }
-        
-        #qte-area { display: none; margin-top: 15px; }
         .qte-bar { width: 100%; height: 25px; background-color: #555; border: 2px solid #fff; border-radius: 15px; position: relative; overflow: hidden; margin-bottom: 15px; }
-        
-        /* 動態判定區塊設定 */
-        .qte-target-main { position: absolute; height: 100%; } 
-        .qte-target-perfect { position: absolute; height: 100%; z-index: 2; display: none; } /* 閃避區置於上層 */
-        
+        .qte-target-main { position: absolute; height: 100%; display: none; } 
+        .qte-target-perfect { position: absolute; height: 100%; z-index: 2; display: none; } 
+        .qte-target-aoe { position: absolute; height: 100%; width: 10%; background-color: #2ecc71; display: none; }
+        #aoe-zone-1 { left: 20%; } #aoe-zone-2 { left: 50%; } #aoe-zone-3 { left: 80%; }
         .qte-cursor { position: absolute; left: 0%; width: 6px; height: 100%; background-color: #fff; box-shadow: 0 0 5px #fff; z-index: 3; }
-        
+        .mash-bar-container { width: 100%; height: 25px; background-color: #333; border: 2px solid #fff; border-radius: 15px; overflow: hidden; margin-bottom: 10px; position: relative; }
+        #mash-fill { width: 0%; height: 100%; background-color: #9b59b6; box-shadow: 0 0 10px #9b59b6; transition: width 0.1s; }
+        #mash-timer-text { font-size: 18px; font-weight: bold; color: #fff; margin-bottom: 10px; }
+        #mash-btn { background-color: #9b59b6; color: #fff; padding: 15px 40px; font-size: 20px; border-radius: 50px; }
+        #mash-btn:active { transform: scale(0.9); background-color: #8e44ad; }
         #action-btn { background-color: #ff9f43; color: #fff; transform: scale(1.1); }
         #action-btn:active { transform: scale(0.9); }
     </style>
 </head>
 <body>
-
-    <h1>極限閃避系統測試</h1>
-
+    <h1>多重 QTE 與技能樹整合測試</h1>
     <div class="battle-stage">
         <div class="character-box">
-            <h2>布蕾蒂雅</h2>
-            <p>HP: <span class="hp-text" id="player-hp">20</span> / 20</p>
-            <p>SP: <span class="sp-text" id="player-sp">10</span> / 10</p>
+            <h2 class="name-title">布蕾蒂雅</h2>
+            <div class="status-poison" id="player-status"></div>
+            <p style="margin: 5px 0;">HP: <span class="hp-text" id="player-hp">20</span> / 20</p>
+            <p style="margin: 5px 0;">SP: <span class="sp-text" id="player-sp">40</span> / 40</p>
         </div>
-        <div class="character-box">
-            <h2>赫爾墨斯</h2>
-            <div class="status-text" id="enemy-status"></div>
-            <p>HP: <span class="hp-text" id="enemy-hp">40</span> / 40</p>
+        <div class="enemies-container">
+            <div class="character-box" id="enemy-0-box">
+                <h2 class="name-title">赫爾墨斯</h2>
+                <div class="status-shield" id="enemy-0-status"></div>
+                <p style="margin: 5px 0;">HP: <span class="hp-text" id="enemy-0-hp">40</span> / 40</p>
+            </div>
+            <div class="character-box" id="enemy-1-box">
+                <h2 class="name-title">深淵蝙蝠</h2>
+                <div class="status-shield" id="enemy-1-status"></div>
+                <p style="margin: 5px 0;">HP: <span class="hp-text" id="enemy-1-hp">12</span> / 12</p>
+            </div>
         </div>
     </div>
 
@@ -60,39 +67,285 @@
         <div id="message-box">戰鬥開始！輪到 布蕾蒂雅 行動。</div>
         
         <div id="action-menu">
-            <button class="btn-attack" onclick="startAttack()">攻擊</button>
-            <button class="btn-skill" onclick="startSkill()">破甲 (4 SP)</button>
-            <button class="btn-item" onclick="openItemMenu()">道具</button>
+            <button class="btn-attack" onpointerdown="startAction('attack')">攻擊</button>
+            <button class="btn-skill-main" onpointerdown="openSkillMenu()">技能</button>
+            <button class="btn-item" onpointerdown="openItemMenu()">道具</button>
+        </div>
+
+        <div id="skill-menu">
+            <button class="btn-skill" onpointerdown="startAction('skill')">破甲擊 (4 SP)</button>
+            <button class="btn-aoe" onpointerdown="startAction('aoe')">星空爆發 (6 SP)</button>
+            <button class="btn-back" onpointerdown="closeSubMenus()">返回</button>
+        </div>
+
+        <div id="target-menu">
+            <div id="target-buttons"></div>
         </div>
 
         <div id="item-menu">
-            <button class="btn-item" onclick="useItem('potion')">回復藥 (<span id="potion-count">3</span>)</button>
-            <button class="btn-item" onclick="useItem('ether')">魔法水 (<span id="ether-count">2</span>)</button>
-            <button class="btn-back" onclick="closeItemMenu()">返回</button>
+            <button class="btn-item" onpointerdown="useItem('potion')">回復藥 (<span id="potion-count">3</span>)</button>
+            <button class="btn-item" onpointerdown="useItem('ether')">魔法水 (<span id="ether-count">2</span>)</button>
+            <button class="btn-item" onpointerdown="useItem('antidote')">解毒草 (<span id="antidote-count">2</span>)</button>
+            <button class="btn-back" onpointerdown="closeSubMenus()">返回</button>
         </div>
 
         <div id="qte-area">
             <div class="qte-bar">
                 <div class="qte-target-main" id="qte-main-zone"></div>
                 <div class="qte-target-perfect" id="qte-perfect-zone"></div>
-                
+                <div class="qte-target-aoe" id="aoe-zone-1"></div>
+                <div class="qte-target-aoe" id="aoe-zone-2"></div>
+                <div class="qte-target-aoe" id="aoe-zone-3"></div>
                 <div class="qte-cursor" id="qte-cursor"></div>
             </div>
-            <button id="action-btn" onclick="checkQte()">動作！</button>
+            <button id="action-btn" onpointerdown="checkQte()">動作！</button>
+        </div>
+
+        <div id="mash-area">
+            <div class="mash-bar-container">
+                <div id="mash-fill"></div>
+            </div>
+            <div id="mash-timer-text">2.0 秒</div>
+            <button id="mash-btn" onpointerdown="doMash()">瘋狂連打！</button>
         </div>
     </div>
 
     <script>
-        let player = { hp: 20, maxHp: 20, sp: 10, maxSp: 10 };
-        let enemy = { hp: 40, maxHp: 40, attack: 5, shield: false }; // 稍微提高敵人攻擊力，凸顯閃避重要性
+        // 這裡把 maxSp 和 sp 的預設值改為 40
+        let player = { hp: 20, maxHp: 20, sp: 40, maxSp: 40, status: 'normal' };
+        let enemies = [
+            { id: 0, name: "赫爾墨斯", hp: 40, maxHp: 40, attack: 4, shield: false, isAlive: true, isPoisoner: true },
+            { id: 1, name: "深淵蝙蝠", hp: 12, maxHp: 12, attack: 2, shield: false, isAlive: true, isPoisoner: false }
+        ];
         
-        let baseAttack = 3, skillAttack = 6, skillCost = 4, qteBonus = 2;   
-        let inventory = { potion: { count: 3, healHp: 10, name: "回復藥" }, ether: { count: 2, healSp: 6, name: "魔法水" } };
+        let baseAttack = 3, skillBaseAttack = 3, skillCost = 4, qteBonus = 2;   
+        let aoeBaseAttack = 2, aoeCost = 6; 
+        
+        let inventory = { potion: { count: 3, healHp: 10, name: "回復藥" }, ether: { count: 2, healSp: 15, name: "魔法水" }, antidote: { count: 2, name: "解毒草" } };
 
         const ui = {
-            playerHp: document.getElementById('player-hp'), playerSp: document.getElementById('player-sp'),
-            enemyHp: document.getElementById('enemy-hp'), enemyStatus: document.getElementById('enemy-status'),
+            playerHp: document.getElementById('player-hp'), playerSp: document.getElementById('player-sp'), playerStatus: document.getElementById('player-status'),
             msgBox: document.getElementById('message-box'), actionMenu: document.getElementById('action-menu'),
+            skillMenu: document.getElementById('skill-menu'), itemMenu: document.getElementById('item-menu'), 
+            targetMenu: document.getElementById('target-menu'), targetBtns: document.getElementById('target-buttons'),
+            qteArea: document.getElementById('qte-area'), qteCursor: document.getElementById('qte-cursor'), actionBtn: document.getElementById('action-btn'),
+            mainZone: document.getElementById('qte-main-zone'), perfectZone: document.getElementById('qte-perfect-zone'),
+            aoeZones: [document.getElementById('aoe-zone-1'), document.getElementById('aoe-zone-2'), document.getElementById('aoe-zone-3')],
+            mashArea: document.getElementById('mash-area'), mashFill: document.getElementById('mash-fill'), mashTimer: document.getElementById('mash-timer-text')
+        };
+
+        let cursorPosition = 0, qteReq, isQteActive = false;
+        let pendingAction = "", currentTargetIndex = 0, activeEnemyIndex = 0, isEnemyPoisonAttack = false;
+        let targetStart = 0, targetEnd = 0, perfectStart = 0, perfectEnd = 0;
+        let aoeHitStatus = [false, false, false];
+        let aoeHitCount = 0;
+        let mashCount = 0, mashTimeLeft = 2000, mashInterval, isMashing = false;
+
+        function openSkillMenu() { ui.actionMenu.style.display = 'none'; ui.skillMenu.style.display = 'block'; ui.msgBox.innerText = "請選擇技能。"; }
+        function openItemMenu() { ui.actionMenu.style.display = 'none'; ui.itemMenu.style.display = 'block'; ui.msgBox.innerText = "請選擇道具。"; }
+        function closeSubMenus() { ui.skillMenu.style.display = 'none'; ui.itemMenu.style.display = 'none'; ui.targetMenu.style.display = 'none'; ui.actionMenu.style.display = 'block'; ui.msgBox.innerText = "請選擇行動。"; }
+
+        function useItem(itemType) {
+            let item = inventory[itemType];
+            if (item.count <= 0) { ui.msgBox.innerText = `背包裡的 ${item.name} 已經用完了！`; return; }
+            item.count--; document.getElementById(`${itemType}-count`).innerText = item.count; ui.itemMenu.style.display = 'none';
+            
+            if (itemType === 'potion') { player.hp = Math.min(player.hp + item.healHp, player.maxHp); ui.playerHp.innerText = player.hp; ui.msgBox.innerText = `回復了 ${item.healHp} 點 HP。`; } 
+            else if (itemType === 'ether') { player.sp = Math.min(player.sp + item.healSp, player.maxSp); ui.playerSp.innerText = player.sp; ui.msgBox.innerText = `回復了 ${item.healSp} 點 SP。`; } 
+            else if (itemType === 'antidote') {
+                if (player.status === 'poison') { player.status = 'normal'; ui.playerStatus.innerText = ""; ui.msgBox.innerText = `毒性被淨化了！`; } 
+                else { ui.msgBox.innerText = `吃了解毒草，但什麼事也沒發生。`; }
+            }
+            setTimeout(startEnemyPhase, 1500); 
+        }
+
+        function startAction(action) {
+            if (action === 'skill' && player.sp < skillCost) { ui.msgBox.innerText = "SP 不足！無法施展破甲擊。"; return; }
+            if (action === 'aoe' && player.sp < aoeCost) { ui.msgBox.innerText = "SP 不足！無法施展星空爆發。"; return; }
+            
+            pendingAction = action;
+            ui.actionMenu.style.display = 'none';
+            ui.skillMenu.style.display = 'none';
+
+            if (action === 'aoe') {
+                player.sp -= aoeCost; ui.playerSp.innerText = player.sp;
+                configureQteZones('aoe'); 
+                setupQteUI("點擊！", "#f39c12", `施展【星空爆發】！\n(游標經過綠色區域時連續點擊！)`);
+                startQteAnimation();
+                return;
+            }
+
+            ui.targetMenu.style.display = 'block'; ui.msgBox.innerText = "請選擇攻擊目標：";
+            ui.targetBtns.innerHTML = '';
+            enemies.forEach((en, idx) => {
+                if (en.isAlive) {
+                    let btn = document.createElement('button'); btn.className = 'btn-attack'; btn.innerText = en.name;
+                    btn.onpointerdown = () => confirmTarget(idx); ui.targetBtns.appendChild(btn);
+                }
+            });
+            let backBtn = document.createElement('button'); backBtn.className = 'btn-back'; backBtn.innerText = "返回";
+            backBtn.onpointerdown = closeSubMenus; ui.targetBtns.appendChild(backBtn);
+        }
+
+        function confirmTarget(index) {
+            currentTargetIndex = index; ui.targetMenu.style.display = 'none';
+            if (pendingAction === 'skill') {
+                player.sp -= skillCost; ui.playerSp.innerText = player.sp;
+                ui.msgBox.innerText = `對 ${enemies[index].name} 施展【破甲擊】！\n(2秒內瘋狂連打集氣！)`; startMashQte(); 
+            } else {
+                configureQteZones('attack'); setupQteUI("打擊！", "#ff9f43", `準備攻擊 ${enemies[index].name}！\n(進入綠色區域時點擊)`); startQteAnimation(); 
+            }
+        }
+
+        function configureQteZones(type) {
+            ui.mainZone.style.display = 'none'; ui.perfectZone.style.display = 'none';
+            ui.aoeZones.forEach(z => { z.style.display = 'none'; z.style.backgroundColor = '#2ecc71'; });
+
+            if (type === 'attack') {
+                targetStart = 70; targetEnd = 90; perfectStart = -1; perfectEnd = -1; 
+                ui.mainZone.style.left = '70%'; ui.mainZone.style.width = '20%'; ui.mainZone.style.backgroundColor = '#2ecc71'; ui.mainZone.style.display = 'block';
+            } else if (type === 'defend') {
+                targetStart = 60; targetEnd = 95; perfectStart = 75; perfectEnd = 81; 
+                ui.mainZone.style.left = '60%'; ui.mainZone.style.width = '35%'; ui.mainZone.style.backgroundColor = '#3498db'; ui.mainZone.style.display = 'block'; 
+                ui.perfectZone.style.display = 'block'; ui.perfectZone.style.left = '75%'; ui.perfectZone.style.width = '6%'; ui.perfectZone.style.backgroundColor = '#f1c40f'; 
+            } else if (type === 'aoe') {
+                ui.aoeZones.forEach(z => z.style.display = 'block'); aoeHitStatus = [false, false, false]; aoeHitCount = 0;
+            }
+        }
+
+        function setupQteUI(btnText, btnColor, msg) { ui.qteArea.style.display = 'block'; ui.actionBtn.innerText = btnText; ui.actionBtn.style.backgroundColor = btnColor; ui.msgBox.innerText = msg; }
+
+        function startQteAnimation() {
+            cursorPosition = 0; isQteActive = true; ui.qteCursor.style.left = cursorPosition + '%';
+            function moveCursor() {
+                if (!isQteActive) return; 
+                cursorPosition += 1.2; ui.qteCursor.style.left = cursorPosition + '%';
+                if (cursorPosition >= 100) { isQteActive = false; checkQteResult(); } else { qteReq = requestAnimationFrame(moveCursor); }
+            }
+            qteReq = requestAnimationFrame(moveCursor);
+        }
+
+        function checkQte() { 
+            if (!isQteActive) return; 
+            if (pendingAction === 'aoe') {
+                let hitAny = false;
+                if (cursorPosition >= 20 && cursorPosition <= 30 && !aoeHitStatus[0]) { aoeHitStatus[0] = true; ui.aoeZones[0].style.backgroundColor = '#f1c40f'; hitAny = true; } 
+                else if (cursorPosition >= 50 && cursorPosition <= 60 && !aoeHitStatus[1]) { aoeHitStatus[1] = true; ui.aoeZones[1].style.backgroundColor = '#f1c40f'; hitAny = true; } 
+                else if (cursorPosition >= 80 && cursorPosition <= 90 && !aoeHitStatus[2]) { aoeHitStatus[2] = true; ui.aoeZones[2].style.backgroundColor = '#f1c40f'; hitAny = true; }
+                if (hitAny) { aoeHitCount++; }
+            } else {
+                isQteActive = false; cancelAnimationFrame(qteReq); checkQteResult(); 
+            }
+        }
+
+        function checkQteResult() {
+            ui.qteArea.style.display = 'none'; 
+            if (pendingAction === "attack") {
+                let isSuccess = (cursorPosition >= targetStart && cursorPosition <= targetEnd);
+                let target = enemies[currentTargetIndex];
+                if (target.shield) { ui.msgBox.innerText = `攻擊被彈開！${target.name} 有護盾保護。`; setTimeout(checkWinCondition, 2000); return; }
+                let dmg = baseAttack + (isSuccess ? qteBonus : 0);
+                ui.msgBox.innerText = isSuccess ? `會心一擊！對 ${target.name} 造成 ${dmg} 點傷害。` : `普通攻擊。對 ${target.name} 造成 ${dmg} 點傷害。`;
+                applyDamageToTarget(target, dmg);
+            } 
+            else if (pendingAction === "aoe") {
+                let dmg = aoeBaseAttack + (aoeHitCount * 2); 
+                let finalMsg = `✨星空爆發！(Combo: ${aoeHitCount})\n`;
+                enemies.forEach(target => {
+                    if (target.isAlive) {
+                        if (target.shield) { finalMsg += `[${target.name}] 護盾抵擋！ `; } 
+                        else {
+                            finalMsg += `[${target.name}] -${dmg}HP `; target.hp = Math.max(target.hp - dmg, 0); document.getElementById(`enemy-${target.id}-hp`).innerText = target.hp;
+                            if (target.hp === 0) { target.isAlive = false; document.getElementById(`enemy-${target.id}-box`).style.opacity = '0.3'; }
+                        }
+                    }
+                });
+                ui.msgBox.innerText = finalMsg; setTimeout(checkWinCondition, 2500); 
+            }
+            else if (pendingAction === "defend") {
+                let isPerfect = (cursorPosition >= perfectStart && cursorPosition <= perfectEnd);
+                let isSuccess = (cursorPosition >= targetStart && cursorPosition <= targetEnd);
+                let currentEnemy = enemies[activeEnemyIndex]; let dmgTaken = 0;
+                
+                if (isPerfect) { ui.msgBox.innerText = `💫 極限閃避！受到 0 點傷害。`; dmgTaken = 0; } 
+                else if (isSuccess) { dmgTaken = currentEnemy.attack - qteBonus; ui.msgBox.innerText = `🛡️ 成功防禦！受到了 ${dmgTaken} 點傷害。`; } 
+                else { dmgTaken = currentEnemy.attack; ui.msgBox.innerText = `💥 防禦失敗！受到了 ${dmgTaken} 點傷害。`; }
+
+                if (isEnemyPoisonAttack && !isPerfect && player.status !== 'poison') { player.status = 'poison'; ui.playerStatus.innerText = "[中毒]"; ui.msgBox.innerText += `\n布蕾蒂雅 中毒了！`; }
+                player.hp = Math.max(player.hp - dmgTaken, 0); ui.playerHp.innerText = player.hp;
+                if (player.hp === 0) { setTimeout(() => { ui.msgBox.innerText = "布蕾蒂雅 倒下了... 戰鬥失敗。"; }, 1500); return; }
+                activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 1500);
+            }
+        }
+
+        function startMashQte() {
+            ui.mashArea.style.display = 'block'; mashCount = 0; mashTimeLeft = 2000; isMashing = true; ui.mashFill.style.width = '0%'; ui.mashTimer.innerText = "2.0 秒";
+            mashInterval = setInterval(() => {
+                mashTimeLeft -= 50; ui.mashTimer.innerText = (mashTimeLeft / 1000).toFixed(1) + " 秒";
+                if (mashTimeLeft <= 0) { clearInterval(mashInterval); isMashing = false; ui.mashTimer.innerText = "時間到！"; setTimeout(checkMashResult, 500); }
+            }, 50);
+        }
+
+        function doMash() {
+            if (!isMashing) return; mashCount++; let fillPercent = Math.min((mashCount / 15) * 100, 100); ui.mashFill.style.width = fillPercent + '%';
+            if (mashCount >= 15) ui.mashFill.style.backgroundColor = "#f1c40f"; 
+        }
+
+        function checkMashResult() {
+            ui.mashArea.style.display = 'none'; ui.mashFill.style.backgroundColor = "#9b59b6"; 
+            let target = enemies[currentTargetIndex]; let extraDmg = Math.min(Math.floor(mashCount / 3), 5); let totalDmg = skillBaseAttack + extraDmg; let msgPrefix = "";
+            if(target.shield) { target.shield = false; document.getElementById(`enemy-${target.id}-status`).innerText = ""; msgPrefix = "擊碎護盾！\n"; }
+            
+            if (mashCount >= 15) ui.msgBox.innerText = `${msgPrefix}MAX 集氣！完美破甲擊！\n對 ${target.name} 造成了 ${totalDmg} 點巨大傷害。`;
+            else if (mashCount >= 5) ui.msgBox.innerText = `${msgPrefix}破甲擊！\n對 ${target.name} 造成了 ${totalDmg} 點傷害。`;
+            else ui.msgBox.innerText = `${msgPrefix}集氣不足，軟弱的破甲擊。\n對 ${target.name} 造成了 ${totalDmg} 點傷害。`;
+            applyDamageToTarget(target, totalDmg);
+        }
+
+        function applyDamageToTarget(target, dmg) {
+            target.hp = Math.max(target.hp - dmg, 0); document.getElementById(`enemy-${target.id}-hp`).innerText = target.hp;
+            if (target.hp === 0) {
+                target.isAlive = false; document.getElementById(`enemy-${target.id}-box`).style.opacity = '0.3'; 
+                setTimeout(() => { ui.msgBox.innerText = `${target.name} 被打倒了！`; setTimeout(checkWinCondition, 1500); }, 1000);
+            } else { setTimeout(checkWinCondition, 1500); }
+        }
+
+        function checkWinCondition() {
+            let allDead = enemies.every(e => !e.isAlive);
+            if (allDead) { ui.msgBox.innerText = "所有敵人都被打倒了！戰鬥勝利！"; } else { startEnemyPhase(); }
+        }
+
+        function startEnemyPhase() {
+            if (player.status === 'poison') {
+                player.hp = Math.max(player.hp - 2, 0); ui.playerHp.innerText = player.hp; ui.msgBox.innerText = `毒性發作... 受到了 2 點毒屬性傷害。`;
+                if (player.hp === 0) { setTimeout(() => { ui.msgBox.innerText = "布蕾蒂雅 倒下了... 戰鬥失敗。"; }, 1500); return; }
+                setTimeout(() => { activeEnemyIndex = 0; processEnemyTurnQueue(); }, 1500);
+            } else { activeEnemyIndex = 0; processEnemyTurnQueue(); }
+        }
+
+        function processEnemyTurnQueue() {
+            while (activeEnemyIndex < enemies.length && !enemies[activeEnemyIndex].isAlive) { activeEnemyIndex++; }
+            if (activeEnemyIndex >= enemies.length) { ui.msgBox.innerText = "輪到 布蕾蒂雅 行動了！"; ui.actionMenu.style.display = 'flex'; return; }
+            let enemy = enemies[activeEnemyIndex]; executeSingleEnemyAI(enemy);
+        }
+
+        function executeSingleEnemyAI(enemy) {
+            let moveRoll = Math.random(); pendingAction = "defend"; 
+            if (enemy.name === "赫爾墨斯" && !enemy.shield && moveRoll < 0.2) {
+                enemy.shield = true; document.getElementById(`enemy-${enemy.id}-status`).innerText = "[護盾保護中]";
+                ui.msgBox.innerText = `赫爾墨斯 舉起護盾！一般攻擊無效！`; activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 2000); 
+            } else if (enemy.isPoisoner && moveRoll < 0.5) {
+                isEnemyPoisonAttack = true; ui.msgBox.innerText = `${enemy.name} 揮出帶毒的利刃！\n(危險！嘗試極限閃避！)`;
+                setTimeout(() => { configureQteZones('defend'); setupQteUI("防禦 / 閃避！", "#3498db", `毒刃襲來！(黃區閃避)`); startQteAnimation(); }, 1500);
+            } else {
+                isEnemyPoisonAttack = false; ui.msgBox.innerText = `${enemy.name} 發動了攻擊！\n(準備防禦...)`;
+                setTimeout(() => { configureQteZones('defend'); setupQteUI("防禦 / 閃避！", "#3498db", `${enemy.name} 攻擊了！`); startQteAnimation(); }, 1500);
+            }
+        }
+    </script>
+</body>
+</html>
+essage-box'), actionMenu: document.getElementById('action-menu'),
             itemMenu: document.getElementById('item-menu'), qteArea: document.getElementById('qte-area'),
             qteCursor: document.getElementById('qte-cursor'), actionBtn: document.getElementById('action-btn'),
             mainZone: document.getElementById('qte-main-zone'), perfectZone: document.getElementById('qte-perfect-zone')
