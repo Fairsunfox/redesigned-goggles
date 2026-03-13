@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>QTE 回合制戰鬥</title>
+    <title>QTE 回合制戰鬥 - 星空彼方的約定</title>
     <style>
         body { background-color: #2b2b2b; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; touch-action: manipulation; }
         
@@ -20,7 +20,8 @@
         .btn-char-bredeia { background-color: #9b59b6; }
         .btn-char-nagito { background-color: #e74c3c; }
         .btn-char-tsukito { background-color: #e056fd; }
-        .btn-boss-dummy { background-color: #7f8c8d; }
+        .btn-boss-dummy { background-color: #c0392b; }
+        .btn-boss-tutorial { background-color: #27ae60; } 
 
         /* AVG 劇情模式與選項樣式 */
         #screen-story { transition: background-color 0.5s ease; justify-content: flex-end; padding-bottom: 50px; background-color: #1a1a2e; }
@@ -30,12 +31,12 @@
         .story-hint { position: absolute; right: 15px; bottom: 10px; font-size: 12px; color: #aaa; animation: blink 1.5s infinite; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
         
-        #story-choices { display: none; justify-content: center; gap: 15px; margin-top: 15px; }
+        #story-choices { display: none; justify-content: center; gap: 15px; margin-top: 15px; flex-wrap: wrap;}
         .story-btn { background-color: #3498db; color: #fff; padding: 10px 20px; font-size: 16px; border: 2px solid #fff; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .story-btn.disabled { background-color: #555; color: #888; border-color: #777; cursor: not-allowed; }
         .story-btn:not(.disabled):active { transform: scale(0.9); }
 
-        /* 戰鬥畫面樣式 */
+        /* 戰鬥與小遊戲共用樣式 */
         .battle-stage { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 20px; width: 100%; max-width: 600px;}
         .character-box { border: 2px solid #ccc; border-radius: 10px; padding: 10px; width: 130px; background-color: #3a3a3a; transition: all 0.5s ease; transform-origin: center; }
         .enemies-container { display: flex; flex-direction: column; gap: 10px; }
@@ -44,9 +45,8 @@
         .sp-text { color: #54a0ff; font-weight: bold; font-size: 16px; }
         .status-enemy { color: #feca57; font-weight: bold; font-size: 12px; min-height: 16px; }
         .status-player { color: #9b59b6; font-weight: bold; font-size: 14px; min-height: 20px; }
-        .status-counter { color: #00cec9; } 
         
-        .ui-panel { border: 2px solid #aaa; padding: 15px; width: 90%; max-width: 450px; margin: 0 auto; border-radius: 10px; background-color: #1e1e1e; min-height: 160px; }
+        .ui-panel { border: 2px solid #aaa; padding: 15px; width: 90%; max-width: 450px; margin: 0 auto; border-radius: 10px; background-color: #1e1e1e; min-height: 160px; position: relative;}
         #message-box { font-size: 15px; margin-bottom: 15px; color: #feca57; min-height: 40px; white-space: pre-line; }
         
         button { padding: 8px 12px; font-size: 15px; cursor: pointer; border-radius: 5px; border: none; font-weight: bold; margin: 4px; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
@@ -60,11 +60,9 @@
         .btn-back { background-color: #7f8c8d; color: #fff; }
         
         .qte-bar { width: 100%; height: 25px; background-color: #555; border: 2px solid #fff; border-radius: 15px; position: relative; overflow: hidden; margin-bottom: 15px; }
-        .qte-target-main { position: absolute; height: 100%; display: none; transition: width 0.2s ease, left 0.2s ease; } 
+        .qte-target-main { position: absolute; height: 100%; display: none; transition: width 0.1s ease, left 0.1s ease; } 
         .qte-target-perfect { position: absolute; height: 100%; z-index: 2; display: none; } 
         .qte-target-aoe { position: absolute; height: 100%; width: 10%; background-color: #2ecc71; display: none; }
-        
-        /* 多游標樣式支援 */
         .qte-cursor { position: absolute; left: 0%; width: 6px; height: 100%; background-color: #fff; box-shadow: 0 0 5px #fff; z-index: 3; }
         #qte-cursor-2, #qte-cursor-3 { display: none; } 
         
@@ -80,14 +78,37 @@
         #action-btn:active { transform: scale(0.9); }
         #hold-btn { touch-action: none; }
         #hold-btn:active { transform: scale(0.95); box-shadow: 0 0 15px #f39c12; }
+
+        /* 逃跑小遊戲專屬 */
+        #screen-run { background-color: #1a1a1a; }
+        .run-status-panel { background: rgba(0,0,0,0.8); border: 2px solid #e74c3c; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; margin-bottom: 30px; }
+        .run-title { color: #e74c3c; font-size: 22px; margin-top: 0; text-shadow: 0 0 10px #e74c3c; animation: blink 1s infinite;}
+        .run-info { font-size: 18px; margin: 10px 0; }
+        #run-btn { background-color: #3498db; color: #fff; padding: 15px 40px; font-size: 20px; border-radius: 10px; font-weight: bold; margin-top: 10px;}
+        #run-btn:active { transform: scale(0.9); }
     </style>
 </head>
 <body>
 
     <div id="screen-menu" class="screen active">
         <h1 class="menu-title">星空彼方的約定<br><span style="font-size:18px; color:#aaa;">QTE 戰鬥模擬器</span></h1>
-        <button class="menu-btn btn-story" onpointerdown="startStoryMode()">📖 劇情模式 (序章)</button>
+        <button class="menu-btn btn-story" onpointerdown="showScreen('screen-story-select')">📖 劇情模式</button>
         <button class="menu-btn btn-boss-mode" onpointerdown="showScreen('screen-char')">⚔️ Boss 挑戰模式</button>
+    </div>
+
+    <div id="screen-story-select" class="screen">
+        <h2 class="menu-subtitle">選擇章節</h2>
+        
+        <h3 style="color: #aaa; margin-bottom: 10px; font-size: 18px;">【序章：星空彼方的約定】</h3>
+        <button class="menu-btn" style="background-color: #e67e22; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(1)">第一幕：祭典與星之門</button>
+        <button class="menu-btn" style="background-color: #d35400; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(2)">第二幕：虛擬訓練</button>
+        <button class="menu-btn" style="background-color: #a84300; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(3)">第三幕：冰雪與月兔</button>
+        
+        <h3 style="color: #aaa; margin-top: 20px; margin-bottom: 10px; font-size: 18px;">【第一章：永夜之城】</h3>
+        <button class="menu-btn" style="background-color: #8e44ad; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(4)">第一幕：夢境與啟程</button>
+        <button class="menu-btn" style="background-color: #9b59b6; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(5)">第二幕：廢墟遭遇戰</button>
+
+        <button class="menu-btn btn-back" style="margin-top: 30px;" onpointerdown="showScreen('screen-menu')">返回標題</button>
     </div>
 
     <div id="screen-story" class="screen">
@@ -97,6 +118,20 @@
             <div id="story-choices"></div>
             <div class="story-hint" id="story-hint">點擊螢幕繼續...</div>
         </div>
+    </div>
+
+    <div id="screen-run" class="screen">
+        <div class="run-status-panel">
+            <h2 class="run-title">🚨 敵襲！清掃者追擊 🚨</h2>
+            <div class="run-info">鈴仙凪人 HP: <span id="run-hp" style="color: #ff6b6b; font-weight: bold;">25</span></div>
+            <div class="run-info">成功閃避: <span id="run-progress" style="color: #3498db; font-weight: bold;">0</span> / 10</div>
+            <div id="run-msg" style="color: #feca57; margin-top: 15px; min-height: 25px;">帶著月兔逃跑！注意後方的攻擊！</div>
+        </div>
+        <div class="qte-bar" style="width: 90%; max-width: 450px;">
+            <div class="qte-target-main" id="run-target-zone" style="background-color: #3498db;"></div>
+            <div class="qte-cursor" id="run-cursor"></div>
+        </div>
+        <button id="run-btn" onpointerdown="checkRunQte()">躲避！</button>
     </div>
 
     <div id="screen-char" class="screen">
@@ -109,7 +144,9 @@
 
     <div id="screen-boss" class="screen">
         <h2 class="menu-subtitle">選擇討伐目標</h2>
-        <button class="menu-btn btn-boss-dummy" onpointerdown="selectBoss('dummy')">訓練人偶 PRO</button>
+        <button class="menu-btn btn-boss-tutorial" onpointerdown="selectBoss('tutorial')">🔰 新手教學：基礎訓練</button>
+        <button class="menu-btn btn-boss-dummy" onpointerdown="selectBoss('dummy')">⚠️ 實戰：訓練人偶 PRO</button>
+        <button class="menu-btn btn-boss-mode" style="background-color: #c0392b;" onpointerdown="selectBoss('cleaner')">🤖 廢墟清掃者 (創新變速AI)</button>
         <button class="menu-btn btn-back" style="margin-top: 30px;" onpointerdown="showScreen('screen-char')">重新選擇角色</button>
     </div>
 
@@ -121,18 +158,8 @@
                 <p style="margin: 5px 0;">HP: <span class="hp-text" id="player-hp">20</span> / <span id="player-max-hp">20</span></p>
                 <p style="margin: 5px 0;">SP: <span class="sp-text" id="player-sp">20</span> / <span id="player-max-sp">20</span></p>
             </div>
-            <div class="enemies-container">
-                <div class="character-box" id="enemy-0-box">
-                    <h2 class="name-title">訓練人偶PRO</h2>
-                    <div class="status-enemy" id="enemy-0-status"></div>
-                    <p style="margin: 5px 0;">HP: <span class="hp-text" id="enemy-0-hp">50</span> / 50</p>
+            <div class="enemies-container" id="enemies-area">
                 </div>
-                <div class="character-box" id="enemy-1-box">
-                    <h2 class="name-title">無人機僕從</h2>
-                    <div class="status-enemy" id="enemy-1-status"></div>
-                    <p style="margin: 5px 0;">HP: <span class="hp-text" id="enemy-1-hp">15</span> / 15</p>
-                </div>
-            </div>
         </div>
 
         <div class="ui-panel">
@@ -158,7 +185,6 @@
                     <div class="qte-target-aoe" id="aoe-zone-1"></div>
                     <div class="qte-target-aoe" id="aoe-zone-2"></div>
                     <div class="qte-target-aoe" id="aoe-zone-3"></div>
-                    
                     <div class="qte-cursor" id="qte-cursor"></div>
                     <div class="qte-cursor" id="qte-cursor-2"></div>
                     <div class="qte-cursor" id="qte-cursor-3"></div>
@@ -176,63 +202,99 @@
     </div>
 
     <script>
-        const bgm = new Audio('bgm.mp3');
-        bgm.loop = true; bgm.volume = 0.5;
+        // ==========================================
+        // 🎵 音樂切換系統 (支援 bgm.mp3 與 bgm2.mp3)
+        // ==========================================
+        const bgm = new Audio('bgm.mp3'); 
+        bgm.loop = true; 
+        bgm.volume = 0.5;
 
-        const sfx = {
-            hit: new Audio('hit.mp3'), miss: new Audio('miss.mp3'), guard: new Audio('guard.mp3'), 
-            skill: new Audio('skill.mp3'), heal: new Audio('heal.mp3'), click: new Audio('click.mp3'), cancel: new Audio('cancel.mp3')
-        };
+        // 根據遭遇的 Boss 切換 BGM
+        function changeBGM(bossType) {
+            // 如果是清掃者，使用 bgm2.mp3；否則使用原本的 bgm.mp3
+            let trackName = (bossType === 'cleaner') ? 'bgm2.mp3' : 'bgm.mp3';
+            
+            // 檢查當前音樂是否已經是我們要播的，避免重複載入導致音樂中斷
+            if (!bgm.src.endsWith(trackName)) {
+                bgm.src = trackName;
+                bgm.load();
+            }
+            bgm.currentTime = 0;
+            bgm.play().catch(e => { console.log("BGM 自動播放被阻擋"); });
+        }
+
+        const sfx = { hit: new Audio('hit.mp3'), miss: new Audio('miss.mp3'), guard: new Audio('guard.mp3'), skill: new Audio('skill.mp3'), heal: new Audio('heal.mp3'), click: new Audio('click.mp3'), cancel: new Audio('cancel.mp3') };
         function playSound(type) { if(sfx[type]) { sfx[type].currentTime = 0; sfx[type].play().catch(e => {}); } }
 
         // ==========================================
-        // 📖 劇本資料庫
+        // 📖 動態劇本資料庫系統
         // ==========================================
-        const storyScript = [
-            { speaker: "", text: "在一個昏暗的場景，一名銀髮少女坐在沙發上翻閱著某本書籍。", bg: "#1a1a2e" },
-            { speaker: "", text: "突然，她好像察覺到了什麼，並闔上了書本。", bg: "#1a1a2e" },
+        function getProloguePart1() { return [
             { speaker: "布蕾蒂雅", text: "一切的起因，便是源自於那個祭典的夜晚。", bg: "#1a1a2e" },
             { speaker: "布蕾蒂雅", text: "或許你們早就知道這個故事，不過我可不會在乎那麼多。\n畢竟你們都來看了，就當作你們沒看過吧。", bg: "#1a1a2e" },
             { speaker: "布蕾蒂雅", text: "那個少年，「鈴仙凪人」，將會在未來經歷一場難以想像的冒險。", bg: "#1a1a2e" },
-            { speaker: "布蕾蒂雅", text: "唉，要是我能夠講得更具體點就好了，畢竟我現在實在是很懶得說那麼多的話。", bg: "#1a1a2e" },
-            { speaker: "", text: "（場景一轉，來到了一處祭典上）\n鈴仙凪人正漫步在其中。", bg: "#2c3e50" }, 
-            { speaker: "", text: "他似乎想融入進去，但是卻絲毫沒什麼興趣。", bg: "#2c3e50" },
-            { speaker: "", text: "他來到了遠離祭典的一個偏僻山丘上眺望著遠景，思考著自己這麼做究竟是為何。", bg: "#112233" }, 
-            { speaker: "", text: "他依稀記得自己似乎要代替誰，完成誰的願望，去好好見證這個世界。", bg: "#112233" },
-            { speaker: "", text: "可是一嘗試回想起，自己的頭便頭痛欲裂。", bg: "#112233" },
-            { speaker: "", text: "（這時，一個聲音響起）", bg: "#112233" },
-            { speaker: "？？？", text: "真是難看，鈴仙凪人。", bg: "#112233" },
-            { speaker: "鈴仙凪人", text: "怎麼有跟蹤狂？", bg: "#112233" },
-            { speaker: "？？？", text: "真是沒禮貌，我的名字是布蕾蒂雅。", bg: "#112233" },
-            { speaker: "鈴仙凪人", text: "喔，不是等等，妳又是從哪知道我的名字的？", bg: "#112233" },
-            { speaker: "布蕾蒂雅", text: "這不重要，鈴仙凪人。\n重點是你現在所處的世界很快就要迎來毀滅了。", bg: "#112233" },
-            { speaker: "", text: "鈴仙凪人感到疑惑。就在這時，一顆流星劃過，降落到了地面。\n就像是水滴融入水中泛起波紋一樣。", bg: "#112233" },
-            { speaker: "", text: "接著整個世界開始崩裂，白光迸發。", bg: "#ecf0f1" }, 
-            { speaker: "鈴仙凪人", text: "這是怎麼一回事！", bg: "#4a4a4a", textColor: "#000" }, 
-            { speaker: "布蕾蒂雅", text: "我說過了吧，你的世界會迎來毀滅。", bg: "#4a4a4a" },
-            { speaker: "鈴仙凪人", text: "（要是自己在這裡就結束的話，自己就不能完成那個誰的願望了...）", bg: "#4a4a4a" },
-            { speaker: "", text: "布蕾蒂雅在這時向他伸出手。", bg: "#4a4a4a" },
-            { speaker: "布蕾蒂雅", text: "抓住我的手，如果你還想活下去的話。", bg: "#4a4a4a" },
-            { speaker: "", text: "鈴仙凪人很清楚這一抓住就會迎來什麼樣的展開，但他已經做好覺悟了。\n他伸手抓住布蕾蒂雅的手，布蕾蒂雅倒是挺滿意的。", bg: "#4a4a4a" },
-            { speaker: "布蕾蒂雅", text: "看來，你似乎做好覺悟了。", bg: "#4a4a4a" },
-            { speaker: "", text: "與此同時，「星之門」在布蕾蒂雅背後展開，兩人雙雙穿越了進去...", bg: "#000000" },
-            { speaker: "", text: "（穿過無盡的深邃，兩人來到了一處名為「彼岸」的空間）\n四周星光璀璨，彷彿置身於浩瀚的銀河中心。", bg: "#0a0a2a" },
+            { speaker: "", text: "（回憶閃回，母星毀滅，兩人雙雙穿越星之門...）", bg: "#000" },
             { speaker: "鈴仙凪人", text: "沒想到……居然還有這樣的地方。", bg: "#0a0a2a" },
-            { speaker: "布蕾蒂雅", text: "宇宙浩瀚，你不知道的事情可還多著呢。\n不過，你可別誤會了。我特地出手救你，並不是純粹出自於好心喔。", bg: "#0a0a2a" },
-            { speaker: "鈴仙凪人", text: "……我就知道天底下沒有白吃的午餐。", bg: "#0a0a2a" },
             { speaker: "布蕾蒂雅", text: "作為交換，你將成為「紀錄者」。\n去親眼見證某些世界的發展，並在其中尋找到能夠代表著自己在那個世界經歷的痕跡。", bg: "#0a0a2a" },
-            { speaker: "鈴仙凪人", text: "做這種事……有什麼特別的意義嗎？", bg: "#0a0a2a" },
-            { speaker: "布蕾蒂雅", text: "誰知道呢？但至少……你未來的人生經歷會變得非常豐富喔。", bg: "#0a0a2a" },
-            { speaker: "鈴仙凪人", text: "喔。", bg: "#0a0a2a" },
-            { speaker: "布蕾蒂雅", text: "雖然我很想立刻讓你開始身為紀錄者的旅行，但看在你剛經歷那起事件的份上，我建議你先好好休息吧。", bg: "#0a0a2a" },
-            { speaker: "", text: "（經過了一段時間的休息後，鈴仙凪人再次找到了布蕾蒂雅）", bg: "#0a0a2a" },
-            { speaker: "布蕾蒂雅", text: "看來你似乎休息好了。\n不過在開始你的旅途之前，我有義務測試一下你的戰鬥能力。", bg: "#0a0a2a" },
-            { speaker: "", text: "（布蕾蒂雅從某處拿出了一本書）", bg: "#0a0a2a" },
-            { speaker: "布蕾蒂雅", text: "我先問你，你熟悉 QTE 的戰鬥方式嗎？", bg: "#0a0a2a", choices: [{text: "會", valid: true}, {text: "不會", valid: false}] },
-            { speaker: "布蕾蒂雅", text: "不錯，那你需要新手教學嗎？", bg: "#0a0a2a", choices: [{text: "需要", valid: false}, {text: "不需要", valid: true}] },
-            { speaker: "布蕾蒂雅", text: "真的假的，那就讓我看看你的實力吧！", bg: "#0a0a2a" }
-        ];
+            { speaker: "布蕾蒂雅", text: "雖然我很想立刻讓你開始身為紀錄者的旅行，但看在你剛經歷那起事件的份上，我建議你先好好休息吧。", bg: "#0a0a2a" }
+        ];}
 
+        function getProloguePart2() { return [
+            { speaker: "布蕾蒂雅", text: "看來你似乎休息好了。\n不過在開始你的旅途之前，我有義務測試一下你的戰鬥能力。", bg: "#0a0a2a" },
+            { speaker: "布蕾蒂雅", text: "我先問你，你熟悉 QTE 的戰鬥方式嗎？", bg: "#0a0a2a", choices: [{text: "會", valid: true}, {text: "不會", valid: false}] },
+            { speaker: "布蕾蒂雅", text: "不錯，那你需要新手教學嗎？", bg: "#0a0a2a", choices: [ {text: "需要", valid: true, boss: "tutorial"}, {text: "不需要", valid: true, boss: "dummy"} ] }
+        ];}
+
+        function getProloguePart3(bossDefeated) { return [
+            { speaker: "布蕾蒂雅", text: bossDefeated === 'tutorial' ? "表現得一般般吧，但勉強還在可接受的範圍內。" : "乾脆俐落。看來你已經完全準備好了。", bg: "#0a0a2a" },
+            { speaker: "布蕾蒂雅", text: "既然暖身完畢，那就可以正式開始你的第一次旅途了。", bg: "#0a0a2a" },
+            { speaker: "鈴仙凪人", text: "喂，等等，我本人什麼話都還沒說啊！", bg: "#0a0a2a" },
+            { speaker: "", text: "（布蕾蒂雅完全無視凪人的抗議，直接一腳將他踹進了星之門）\n鈴仙月兔也跟著一同穿越...", bg: "#000" }
+        ];}
+
+        function getChapter1_Part1() { return [
+            { speaker: "", text: "（滴答……滴答……）\n意識沉入深海，一段模糊的過往在夢境中浮現。", bg: "#4b3832" }, 
+            { speaker: "？？？", text: "「████，你看！那裡有兔兔！」", bg: "#4b3832" },
+            { speaker: "", text: "在孤兒院偏僻的廢棄物堆積處，一位關係要好的朋友拉著他的手，興奮地指著角落。", bg: "#4b3832" },
+            { speaker: "鈴仙凪人", text: "（……不行，這個社會可不是什麼溫馨的童話。）\n（如果讓牠們繼續留在這裡，被大人發現的話，一定會遭遇不測的。）", bg: "#4b3832" },
+            { speaker: "", text: "年幼的他深知現實的殘酷。為了保護牠們，他沉下臉，打算狠下心將這對兔子驅逐出孤兒院。", bg: "#4b3832" },
+            { speaker: "鈴仙凪人", text: "「走開！別留在這裡！」", bg: "#4b3832" },
+            { speaker: "", text: "然而，當他轉頭看見朋友那瞬間黯淡下來、充滿悲傷的表情時，他剛抬起的手還是僵住了。", bg: "#4b3832" },
+            { speaker: "鈴仙凪人", text: "「……隨便你。要是發生什麼事，我可不管。」", bg: "#4b3832" },
+            { speaker: "", text: "（夢境的畫面逐漸破碎、消散……）", bg: "#1a1a2e" },
+            { speaker: "", text: "鈴仙凪人緩緩睜開眼睛。", bg: "#3e2723" }, 
+            { speaker: "鈴仙凪人", text: "「好重……」\n（他無奈地看著正趴在自己胸口上呼呼大睡的「鈴仙月兔」，嘆了口氣。）", bg: "#3e2723" },
+            { speaker: "", text: "片刻後，一人一兔來到了布蕾蒂雅的面前。", bg: "#3e2723" },
+            { speaker: "布蕾蒂雅", text: "「出發之前，我得給你個忠告。」", bg: "#3e2723" },
+            { speaker: "布蕾蒂雅", text: "「你要去的地方，是一個被『永夜』籠罩的城市。\n在那裡，『自由』與『白晝』是極其陌生的詞彙。」", bg: "#3e2723" },
+            { speaker: "布蕾蒂雅", text: "「鈴仙凪人，可千萬不要迷失了。\n當雙方同時向你伸出橄欖枝時，只要做出你心中認為正確的選擇就好。」", bg: "#3e2723" },
+            { speaker: "", text: "還沒等凪人反應過來，布蕾蒂雅已經毫不客氣地抬起腳，再次將他連人帶兔踹進了深邃的星之門裡。", bg: "#000" },
+            { speaker: "", text: "（經過一陣天旋地轉，凪人與月兔重重地摔在了冰冷的地面上。）", bg: "#1c1c1c" },
+            { speaker: "鈴仙凪人", text: "「痛... 這是哪裡？」", bg: "#1c1c1c" },
+            { speaker: "", text: "映入眼簾的是一片荒蕪的廢墟。天空中沒有星光，只有無盡的漆黑。\n路邊殘破的路燈正發出『滋滋』的微弱電流聲，勉強照亮了周圍。", bg: "#1c1c1c" },
+            { speaker: "鈴仙月兔", text: "「啾啾！」\n（月兔抖了抖身上的灰塵，好奇地東張西望。）", bg: "#1c1c1c" },
+            { speaker: "鈴仙凪人", text: "「那個塔樓... 也許我們該往那裡走。」", bg: "#1c1c1c" },
+            { speaker: "", text: "正當他們準備動身時，前方的陰影處傳來了沉重的金屬摩擦聲。\n一台破舊不堪的戰鬥型機器人緩緩駛出。", bg: "#1c1c1c" },
+            { speaker: "鈴仙凪人", text: "「那是... 戰鬥型機器人？看來就算變成了廢鐵，也沒有忘記自己『清掃者』的本分啊...」", bg: "#1c1c1c" },
+            { speaker: "", text: "「喀啦。」\n凪人不小心踩碎了一塊鬆動的碎石，清脆的聲音在寂靜的廢墟中被無限放大。", bg: "#1c1c1c", textColor: "#ff6b6b" },
+            { speaker: "清掃者", text: "【警告：偵測到未註冊生命體。開始執行清除程序。】", bg: "#300" },
+            { speaker: "系統", text: "【突發事件：清掃者的追擊！】\n準備進行連續 10 次的極限迴避！", bg: "#000", action: "run_minigame" }
+        ];}
+
+        function getChapter1_Part2() { return [
+            { speaker: "鈴仙凪人", text: "「呼……呼……等等，後面的引擎聲怎麼還沒消失！？」", bg: "#1c1c1c" },
+            { speaker: "", text: "即便凪人已經拼盡全力閃避，但清掃者如同附骨之蛆，依然緊緊跟在他們身後，機槍管的紅光越發刺眼。", bg: "#1c1c1c" },
+            { speaker: "鈴仙凪人", text: "「這樣逃下去根本就不是辦法，鈴仙月兔，我們得讓它停下來。」", bg: "#1c1c1c" },
+            { speaker: "鈴仙月兔", text: "「啾啾！」\n（月兔從凪人懷裡跳了出來，擺出了戰鬥的架勢。）", bg: "#1c1c1c" },
+            { speaker: "系統", text: "無路可退！請選擇迎戰的對象：", bg: "#1a1a2e",
+              choices: [
+                  { text: "鈴仙凪人 (拔刀迎擊)", valid: true, boss: "cleaner", char: "nagito" },
+                  { text: "鈴仙月兔 (飛踢出擊)", valid: true, boss: "cleaner", char: "tsukito" }
+              ]
+            }
+        ];}
+
+        let storyScript = []; let baseStoryLength = 0;
         let currentStoryIndex = 0; let isTyping = false; let typeTimer; let fullText = "";
 
         // ==========================================
@@ -249,42 +311,69 @@
             targetMenu: document.getElementById('target-menu'), targetBtns: document.getElementById('target-buttons'), qteArea: document.getElementById('qte-area'), qteBar: document.getElementById('qte-bar-main'), 
             qteCursor: document.getElementById('qte-cursor'), actionBtn: document.getElementById('action-btn'), holdBtn: document.getElementById('hold-btn'), mainZone: document.getElementById('qte-main-zone'), perfectZone: document.getElementById('qte-perfect-zone'),
             aoeZones: [document.getElementById('aoe-zone-1'), document.getElementById('aoe-zone-2'), document.getElementById('aoe-zone-3')],
-            mashArea: document.getElementById('mash-area'), mashFill: document.getElementById('mash-fill'), mashTimer: document.getElementById('mash-timer-text'),
-            storyChoices: document.getElementById('story-choices'), storyHint: document.getElementById('story-hint')
+            storyChoices: document.getElementById('story-choices'), storyHint: document.getElementById('story-hint'),
+            mashArea: document.getElementById('mash-area'), mashFill: document.getElementById('mash-fill'), mashTimer: document.getElementById('mash-timer-text')
         };
 
-        // 一閃與多游標專用變數
+        // 創新 QTE 專用變數
         let cursorPosition = 0, qteReq, isQteActive = false; let cursorDirection = 1; 
         let multiCursorPos = [0, 0, 0]; let multiCursorActive = [false, false, false]; let currentCursorTarget = 0;
         let issenState = ''; let issenTimeout; let issenReactionTimeout; let issenSuccess = false;
-
         let pendingAction = "", currentTargetIndex = 0, activeEnemyIndex = 0; let targetStart = 0, targetWidth = 20, perfectStart = 0, perfectEnd = 0;
         let aoeHitStatus = [false, false, false], aoeHitCount = 0; let qteSpeed = 1.2, qteType = 'normal'; 
+        
+        let targetMoving = false, targetMoveDir = 1; 
+        let lagTimer = 0, isLagPause = false; 
+        let isDefensiveMash = false; 
+        
         let fakeoutTriggered = false, multiHitCurrent = 0, multiHitMax = 1, currentEnemyAttack = {}; let comboCount = 0, isHolding = false;
+        let runProgress = 0, runMax = 10, runPlayerHp = 25;
 
-        function showScreen(screenId) {
-            playSound('click'); 
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(screenId).classList.add('active');
-        }
+        let isMashing = false, mashCount = 0, mashTimeLeft = 2000, mashInterval;
+
+        function showScreen(screenId) { playSound('click'); document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(screenId).classList.add('active'); }
 
         // --- 劇情系統 ---
-        function startStoryMode() {
-            playSound('click'); isStoryMode = true; selectedChar = 'nagito'; selectedBoss = 'dummy';
-            currentStoryIndex = 0; showScreen('screen-story'); renderStoryLine();
+        function loadChapter(chapterNum) {
+            playSound('click'); isStoryMode = true; selectedChar = 'nagito'; 
+            if (chapterNum === 1) { storyScript = getProloguePart1(); } 
+            else if (chapterNum === 2) { storyScript = getProloguePart2(); } 
+            else if (chapterNum === 3) { storyScript = getProloguePart3('dummy'); } 
+            else if (chapterNum === 4) { storyScript = getChapter1_Part1(); }
+            else if (chapterNum === 5) { storyScript = getChapter1_Part2(); } 
+            
+            baseStoryLength = storyScript.length; currentStoryIndex = 0; showScreen('screen-story'); renderStoryLine();
+        }
+
+        function resumeStoryAfterBattle() {
+            if (selectedBoss === 'cleaner') {
+                showScreen('screen-menu'); return; 
+            } else {
+                storyScript = getProloguePart3(selectedBoss); baseStoryLength = storyScript.length;
+                currentStoryIndex = 0; showScreen('screen-story'); renderStoryLine();
+            }
         }
 
         function renderStoryLine() {
             if (currentStoryIndex >= storyScript.length) {
-                bgm.currentTime = 0; bgm.play().catch(e => {}); startBattle(); return;
+                if (storyScript[storyScript.length - 1].text.includes("完】") || storyScript[storyScript.length - 1].text.includes("啟程】")) { showScreen('screen-menu'); return; } 
+                else { 
+                    changeBGM(selectedBoss); // 進入戰鬥前切換音樂
+                    startBattle(); return; 
+                }
             }
+            
             let line = storyScript[currentStoryIndex];
+            if (line.action === 'run_minigame') { 
+                changeBGM('cleaner'); // 逃跑時播放緊張的音樂
+                startRunMinigame(); return; 
+            }
+
             document.getElementById('screen-story').style.backgroundColor = line.bg;
             document.getElementById('story-speaker').innerText = line.speaker ? `【${line.speaker}】` : "";
             ui.storyChoices.style.display = 'none'; ui.storyHint.style.display = 'none';
             fullText = line.text; document.getElementById('story-text').innerText = ""; document.getElementById('story-text').style.color = line.textColor || "#fff";
-            isTyping = true;
-            let charIndex = 0; clearInterval(typeTimer);
+            isTyping = true; let charIndex = 0; clearInterval(typeTimer);
             typeTimer = setInterval(() => {
                 document.getElementById('story-text').innerText += fullText[charIndex]; charIndex++;
                 if (charIndex >= fullText.length) { clearInterval(typeTimer); isTyping = false; checkStoryChoices(); }
@@ -295,8 +384,8 @@
             let line = storyScript[currentStoryIndex];
             if (line.choices) {
                 ui.storyHint.style.display = 'none'; let html = "";
-                line.choices.forEach(c => {
-                    if (c.valid) html += `<button class="story-btn" onpointerdown="chooseOption(event)">${c.text}</button>`;
+                line.choices.forEach((c, idx) => {
+                    if (c.valid) html += `<button class="story-btn" onpointerdown="chooseOption(event, ${idx})">${c.text}</button>`;
                     else html += `<button class="story-btn disabled" onpointerdown="rejectOption(event)">${c.text}</button>`;
                 });
                 ui.storyChoices.innerHTML = html; ui.storyChoices.style.display = 'flex';
@@ -309,18 +398,71 @@
             if (isTyping) { clearInterval(typeTimer); document.getElementById('story-text').innerText = fullText; isTyping = false; checkStoryChoices(); } 
             else { playSound('click'); currentStoryIndex++; renderStoryLine(); }
         }
-        function chooseOption(e) { e.stopPropagation(); playSound('click'); ui.storyChoices.style.display = 'none'; currentStoryIndex++; renderStoryLine(); }
+
+        function chooseOption(e, idx) { 
+            e.stopPropagation(); playSound('click'); ui.storyChoices.style.display = 'none'; 
+            let choice = storyScript[currentStoryIndex].choices[idx];
+            while (storyScript.length > baseStoryLength) { storyScript.pop(); } 
+
+            if (choice.char) selectedChar = choice.char; 
+            if (choice.boss) selectedBoss = choice.boss;
+            
+            if (choice.boss === 'tutorial') { storyScript.push({ speaker: "布蕾蒂雅", text: "哼，果然還是個菜鳥。那就從最基礎的開始吧！", bg: "#0a0a2a" }); } 
+            else if (choice.boss === 'dummy') { storyScript.push({ speaker: "布蕾蒂雅", text: "真的假的，那就讓我看看你的實力吧！", bg: "#0a0a2a" }); }
+            else if (choice.boss === 'cleaner') { storyScript.push({ speaker: "系統", text: `【切換戰鬥模式：對決 廢墟清掃者】\n出戰角色：${charData[selectedChar].name}`, bg: "#900" }); }
+            
+            currentStoryIndex++; renderStoryLine(); 
+        }
         function rejectOption(e) { e.stopPropagation(); playSound('miss'); }
+
+        // --- 逃亡小遊戲 ---
+        function startRunMinigame() {
+            showScreen('screen-run'); runProgress = 0; runPlayerHp = 25;
+            document.getElementById('run-hp').innerText = runPlayerHp; document.getElementById('run-progress').innerText = runProgress; document.getElementById('run-msg').innerText = "清掃者發起了攻擊！\n準備閃避！";
+            document.getElementById('run-target-zone').style.display = 'none'; document.getElementById('run-cursor').style.display = 'none'; setTimeout(nextRunAttack, 1500);
+        }
+        function nextRunAttack() {
+            if (runProgress >= runMax) {
+                document.getElementById('run-msg').innerText = "撐過了猛烈的攻勢！\n但危機尚未解除..."; playSound('skill');
+                setTimeout(() => { storyScript = getChapter1_Part2(); currentStoryIndex = 0; showScreen('screen-story'); renderStoryLine(); }, 2000); return;
+            }
+            document.getElementById('run-msg').innerText = `攻擊來襲！(第 ${runProgress + 1} 波)`;
+            qteSpeed = 1.5 + Math.random() * 2.0; targetStart = 50 + Math.random() * 20; targetWidth = 15 + Math.random() * 10; 
+            let zone = document.getElementById('run-target-zone'); zone.style.display = 'block'; zone.style.left = targetStart + '%'; zone.style.width = targetWidth + '%'; zone.style.backgroundColor = '#3498db';
+            cursorPosition = 0; let cursor = document.getElementById('run-cursor'); cursor.style.display = 'block'; cursor.style.left = '0%'; isQteActive = true;
+            let lastTime = 0;
+            function runLoop(currentTime) {
+                if (!isQteActive) return;
+                if (!lastTime) { lastTime = currentTime; qteReq = requestAnimationFrame(runLoop); return; }
+                let dt = currentTime - lastTime; lastTime = currentTime; if (dt > 50) dt = 16.66;
+                cursorPosition += (qteSpeed * (dt / 16.66)); cursor.style.left = cursorPosition + '%';
+                if (cursorPosition >= 100) { isQteActive = false; processRunResult(false); } else { qteReq = requestAnimationFrame(runLoop); }
+            }
+            qteReq = requestAnimationFrame(runLoop);
+        }
+        function checkRunQte() { if (!isQteActive) return; isQteActive = false; cancelAnimationFrame(qteReq); let isSuccess = (cursorPosition >= targetStart && cursorPosition <= targetStart + targetWidth); processRunResult(isSuccess); }
+        function processRunResult(isSuccess) {
+            document.getElementById('run-target-zone').style.display = 'none'; document.getElementById('run-cursor').style.display = 'none';
+            if (isSuccess) { playSound('guard'); runProgress++; document.getElementById('run-progress').innerText = runProgress; document.getElementById('run-msg').innerText = "💫 閃避成功！"; setTimeout(nextRunAttack, 1000);
+            } else {
+                playSound('miss'); runPlayerHp -= 3; document.getElementById('run-hp').innerText = Math.max(0, runPlayerHp); document.getElementById('run-msg').innerText = "💥 閃避失敗！受到 3 點傷害！";
+                if (runPlayerHp <= 0) { document.getElementById('run-msg').innerText = "體力耗盡... 鈴仙凪人倒下了。\n(2秒後重新開始)"; bgm.pause(); setTimeout(startRunMinigame, 2500); } 
+                else { runProgress++; document.getElementById('run-progress').innerText = runProgress; setTimeout(nextRunAttack, 1500); }
+            }
+        }
 
         // --- 戰鬥系統 ---
         function selectCharacter(charId) { isStoryMode = false; selectedChar = charId; showScreen('screen-boss'); }
-        function selectBoss(bossId) { selectedBoss = bossId; playSound('click'); bgm.currentTime = 0; bgm.play().catch(e => {}); startBattle(); }
+        function selectBoss(bossId) { 
+            selectedBoss = bossId; playSound('click'); 
+            changeBGM(selectedBoss); 
+            startBattle(); 
+        }
 
         function startBattle() {
             let cd = charData[selectedChar];
-            // 【BUG修復】：將 cd.name 存入 player.name 中，解決 undefined 的問題
             player = { name: cd.name, hp: cd.hp, maxHp: cd.hp, sp: cd.sp, maxSp: cd.sp, poisoned: false, blinded: false, counterStance: false };
-            inventory = { potion: { count: isStoryMode ? 8 : 5, healHp: 10, name: "回復藥" }, ether: { count: isStoryMode ? 8 : 5, healSp: 15, name: "魔法水" }, antidote: { count: 3, name: "解毒草" } };
+            inventory = { potion: { count: 8, healHp: 5, name: "回復藥" }, ether: { count: 8, healSp: 10, name: "魔法水" }, antidote: { count: 3, name: "解毒草" } };
             
             ui.playerName.innerText = player.name; ui.playerHp.innerText = player.hp; ui.playerMaxHp.innerText = player.maxHp; ui.playerSp.innerText = player.sp; ui.playerMaxSp.innerText = player.maxSp;
             updatePlayerStatus();
@@ -339,35 +481,45 @@
             }
             ui.skillMenu.innerHTML += `<button class="btn-back" onpointerdown="playSound('cancel'); closeSubMenus()">返回</button>`;
 
-            enemies = [
-                { id: 0, name: "訓練人偶PRO", hp: 50, maxHp: 50, attack: 4, shield: false, isAlive: true, isCharging: false, lastMove: "" },
-                { id: 1, name: "無人機僕從", hp: 15, maxHp: 15, attack: 2, shield: false, isAlive: true, isCharging: false, lastMove: "" }
-            ];
+            document.getElementById('enemies-area').innerHTML = ''; 
+            
+            if (selectedBoss === 'tutorial') {
+                enemies = [ { id: 0, name: "正常訓練人偶", hp: 30, maxHp: 30, attack: 3, shield: false, isAlive: true, isCharging: false, lastMove: "" }, { id: 1, name: "基礎無人機", hp: 10, maxHp: 10, attack: 2, shield: false, isAlive: true, isCharging: false, lastMove: "" } ];
+            } else if (selectedBoss === 'dummy') {
+                enemies = [ { id: 0, name: "訓練人偶PRO", hp: 50, maxHp: 50, attack: 4, shield: false, isAlive: true, isCharging: false, lastMove: "" }, { id: 1, name: "無人機僕從", hp: 15, maxHp: 15, attack: 2, shield: false, isAlive: true, isCharging: false, lastMove: "" } ];
+            } else if (selectedBoss === 'cleaner') {
+                enemies = [ { id: 0, name: "廢墟清掃者", hp: 60, maxHp: 60, attack: 5, shield: false, isAlive: true, isCharging: false, lastMove: "" } ];
+            }
+
             enemies.forEach(e => {
-                let box = document.getElementById(`enemy-${e.id}-box`); box.style.display = 'block'; box.style.transform = 'scale(1)'; box.style.opacity = '1';
-                document.querySelector(`#enemy-${e.id}-box .name-title`).innerText = e.name; document.getElementById(`enemy-${e.id}-hp`).innerText = e.hp; document.getElementById(`enemy-${e.id}-status`).innerText = '';
+                let boxHtml = `<div class="character-box" id="enemy-${e.id}-box">
+                    <h2 class="name-title">${e.name}</h2>
+                    <div class="status-enemy" id="enemy-${e.id}-status"></div>
+                    <p style="margin: 5px 0;">HP: <span class="hp-text" id="enemy-${e.id}-hp">${e.hp}</span> / <span id="enemy-${e.id}-maxhp">${e.maxHp}</span></p>
+                </div>`;
+                document.getElementById('enemies-area').innerHTML += boxHtml;
+                updateEnemyStatus(e);
             });
 
             document.getElementById('potion-count').innerText = inventory.potion.count; document.getElementById('ether-count').innerText = inventory.ether.count; document.getElementById('antidote-count').innerText = inventory.antidote.count;
 
-            if (isStoryMode) { ui.msgBox.innerText = `【虛擬訓練程序啟動】\n讀取紀錄者：鈴仙凪人 的戰鬥數據。\n請開始你的行動。`; } 
+            if (selectedBoss === 'tutorial') { ui.msgBox.innerText = `【基礎教學程序啟動】\n請熟悉戰禦與攻擊的 QTE 節奏。\n輪到 ${player.name} 行動。`; } 
+            else if (selectedBoss === 'cleaner') { ui.msgBox.innerText = `無路可退！對決 廢墟清掃者！\n(警告：這台機器充滿了不穩定的故障！)\n輪到 ${player.name} 行動。`; }
+            else if (isStoryMode) { ui.msgBox.innerText = `【進階實戰程序啟動】\n讀取紀錄者戰鬥數據...\n輪到 ${player.name} 行動。`; }
             else { ui.msgBox.innerText = `戰鬥開始！輪到 ${player.name} 行動。`; }
             
             ui.actionMenu.style.display = 'flex'; ui.skillMenu.style.display = 'none'; ui.itemMenu.style.display = 'none'; ui.targetMenu.style.display = 'none'; ui.qteArea.style.display = 'none'; ui.mashArea.style.display = 'none';
-            activeEnemyIndex = 0; showScreen('screen-battle');
+            activeEnemyIndex = 0; targetMoving = false; showScreen('screen-battle');
         }
 
         function updatePlayerStatus() {
-            let statusStr = "";
-            if (player.counterStance) statusStr += "<span class='status-counter'>[見切架勢]</span> ";
-            if (player.poisoned) statusStr += "[異常狀態] "; 
-            if (player.blinded) statusStr += "[盲目] ";
+            let statusStr = ""; if (player.counterStance) statusStr += "<span class='status-counter'>[見切架勢]</span> ";
+            if (player.poisoned) statusStr += "[異常狀態] "; if (player.blinded) statusStr += "[盲目] ";
             ui.playerStatus.innerHTML = statusStr; if (player.blinded) ui.qteBar.classList.add('blind-mode'); else ui.qteBar.classList.remove('blind-mode');
         }
-
         function updateEnemyStatus(enemy) {
-            let statusStr = "";
-            if (enemy.shield) statusStr += "[護盾保護中] "; if (enemy.isCharging) statusStr += "[蓄能中] ";
+            if(!document.getElementById(`enemy-${enemy.id}-status`)) return;
+            let statusStr = ""; if (enemy.shield) statusStr += "[動態裝甲保護中] "; if (enemy.isCharging) statusStr += "[過載蓄能中] ";
             document.getElementById(`enemy-${enemy.id}-status`).innerText = statusStr;
         }
 
@@ -376,8 +528,7 @@
         function closeSubMenus() { ui.skillMenu.style.display = 'none'; ui.itemMenu.style.display = 'none'; ui.targetMenu.style.display = 'none'; ui.actionMenu.style.display = 'flex'; ui.msgBox.innerText = "請選擇行動。"; }
 
         function useItem(itemType) {
-            let item = inventory[itemType];
-            if (item.count <= 0) { playSound('error'); ui.msgBox.innerText = `背包裡的 ${item.name} 已經用完了！`; return; }
+            let item = inventory[itemType]; if (item.count <= 0) { playSound('error'); ui.msgBox.innerText = `背包裡的 ${item.name} 已經用完了！`; return; }
             item.count--; document.getElementById(`${itemType}-count`).innerText = item.count; ui.itemMenu.style.display = 'none';
             if (itemType === 'potion') { player.hp = Math.min(player.hp + item.healHp, player.maxHp); ui.playerHp.innerText = player.hp; ui.msgBox.innerText = `回復了 ${item.healHp} 點 HP。`; } 
             else if (itemType === 'ether') { player.sp = Math.min(player.sp + item.healSp, player.maxSp); ui.playerSp.innerText = player.sp; ui.msgBox.innerText = `回復了 ${item.healSp} 點 SP。`; } 
@@ -394,6 +545,11 @@
             if (action === 'moonCombo' && player.sp < 4) { playSound('error'); ui.msgBox.innerText = "SP 不足！"; return; }
             if (action === 'moonHold' && player.sp < aoeCost) { playSound('error'); ui.msgBox.innerText = "SP 不足！"; return; }
             
+            if ((action === 'aoe_bredeia' || action === 'moonHold') && selectedBoss === 'tutorial') {
+                let dummy = enemies.find(e => e.name === "正常訓練人偶");
+                if (dummy && dummy.isAlive && !dummy.shield) { playSound('error'); ui.msgBox.innerText = "【教學保護】這招範圍太大會破壞人偶！\n(在護盾展開前，請先使用「普通攻擊」)"; return; }
+            }
+            
             pendingAction = action; ui.actionMenu.style.display = 'none'; ui.skillMenu.style.display = 'none';
 
             if (action === 'counter') { player.sp -= 4; ui.playerSp.innerText = player.sp; player.counterStance = true; updatePlayerStatus(); playSound('skill'); ui.msgBox.innerText = `${player.name} 擺出了【見切架勢】！\n(準備反擊下一次敵人的攻擊)`; setTimeout(() => { activeEnemyIndex = 0; processEnemyTurnQueue(); }, 2000); return; }
@@ -401,27 +557,38 @@
             if (action === 'moonHold') { player.sp -= aoeCost; ui.playerSp.innerText = player.sp; configureQteZones('moonHold'); setupQteUI("hold", "按住蓄力！", "#f39c12", `準備施展【月華爆發】！\n(按住不放，看準時機鬆開)`); return; }
 
             ui.targetMenu.style.display = 'block'; ui.msgBox.innerText = "請選擇目標："; ui.targetBtns.innerHTML = '';
-            enemies.forEach((en, idx) => { if (en.isAlive) { let btn = document.createElement('button'); btn.className = 'btn-attack'; btn.innerText = en.name; btn.onpointerdown = () => { playSound('click'); confirmTarget(idx); }; ui.targetBtns.appendChild(btn); } });
+            enemies.forEach((en, idx) => { if (en.isAlive) { let btn = document.createElement('button'); btn.className = 'btn-attack'; btn.innerText = en.name; btn.onpointerdown = () => { confirmTarget(idx); }; ui.targetBtns.appendChild(btn); } });
             let backBtn = document.createElement('button'); backBtn.className = 'btn-back'; backBtn.innerText = "返回"; backBtn.onpointerdown = () => { playSound('cancel'); closeSubMenus(); }; ui.targetBtns.appendChild(backBtn);
         }
 
         function confirmTarget(index) {
-            currentTargetIndex = index; ui.targetMenu.style.display = 'none';
+            let target = enemies[index];
+            if (selectedBoss === 'tutorial' && target.name === "正常訓練人偶" && !target.shield && pendingAction !== 'attack') {
+                playSound('error'); ui.msgBox.innerText = `【教學保護】人偶無法承受此技能的威力！\n(在護盾展開前，請先使用「普通攻擊」)`;
+                ui.targetMenu.style.display = 'none'; ui.actionMenu.style.display = 'flex'; return;
+            }
+
+            playSound('click'); currentTargetIndex = index; ui.targetMenu.style.display = 'none';
+            targetMoving = false; 
+            
+            if (target.name === "廢墟清掃者" && pendingAction === 'attack') { targetMoving = true; targetMoveDir = 1; }
+
             if (pendingAction === 'skill') { player.sp -= skillCost; ui.playerSp.innerText = player.sp; ui.msgBox.innerText = `對 ${enemies[index].name} 施展【破甲擊】！\n(2秒內瘋狂連打集氣！)`; startMashQte(); } 
             else if (pendingAction === 'safeSlash') { 
-                player.sp -= 2; ui.playerSp.innerText = player.sp; configureQteZones('safeSlash'); 
-                // 【變更】：整體速度大幅提升，並加入隨機要素 (1.5 ~ 2.5倍速)
-                qteSpeed = 1.5 + Math.random() * 1.0; 
-                setupQteUI("click", "三連斬！", "#3498db", `對 ${enemies[index].name} 施展【星屑斬】！\n(注意：每次揮劍速度與節奏都是隨機的！)`); 
-                qteType = 'normal'; startQteAnimation(); 
+                player.sp -= 2; ui.playerSp.innerText = player.sp; configureQteZones('safeSlash'); qteSpeed = 1.5 + Math.random() * 1.0; 
+                setupQteUI("click", "三連斬！", "#3498db", `對 ${enemies[index].name} 施展【星屑斬】！\n(注意：每次揮劍速度與節奏都是隨機的！)`); qteType = 'normal'; startQteAnimation(); 
             } 
             else if (pendingAction === 'issen') { 
                 player.sp -= 3; ui.playerSp.innerText = player.sp; configureQteZones('issen'); 
-                setupQteUI("click", "拔刀！", "#e74c3c", `對 ${enemies[index].name} 施展【一閃】！\n(屏氣凝神...等待紅光出現的瞬間拔刀！)`); 
-                qteType = 'normal'; startQteAnimation(); 
+                setupQteUI("click", "拔刀！", "#e74c3c", `對 ${enemies[index].name} 施展【一閃】！\n(紅光出現瞬間拔刀！極限 0.35秒！)`); qteType = 'normal'; startQteAnimation(); 
             } 
             else if (pendingAction === 'moonCombo') { player.sp -= 4; ui.playerSp.innerText = player.sp; comboCount = 0; configureQteZones('moonCombo'); setupQteUI("click", "踩踏！", "#e056fd", `對 ${enemies[index].name} 發動【連環踢】！\n(進入區域時不斷點擊)`); startQteAnimation(); } 
-            else { configureQteZones('attack'); setupQteUI("click", "打擊！", "#ff9f43", `準備攻擊 ${enemies[index].name}！`); qteSpeed = 1.2; qteType = 'normal'; startQteAnimation(); }
+            else { 
+                configureQteZones('attack'); 
+                let msg = `準備攻擊 ${enemies[index].name}！`;
+                if (targetMoving) msg += `\n(⚠️動態裝甲：目標區域移動中！看準時機！)`;
+                setupQteUI("click", "打擊！", "#ff9f43", msg); qteSpeed = 1.2; qteType = 'normal'; startQteAnimation(); 
+            }
         }
 
         function configureQteZones(type) {
@@ -448,7 +615,7 @@
 
         function startQteAnimation() {
             if (qteReq) cancelAnimationFrame(qteReq); 
-            isQteActive = true; 
+            isQteActive = true; lagTimer = 500; isLagPause = false;
             
             if (pendingAction === 'issen') {
                 issenSuccess = false; issenState = 'waiting'; ui.qteCursor.style.left = '50%';
@@ -456,24 +623,22 @@
                 issenTimeout = setTimeout(() => {
                     if(!isQteActive) return;
                     issenState = 'active'; ui.mainZone.style.display = 'block'; ui.mainZone.style.left = '45%'; ui.mainZone.style.width = '10%'; ui.mainZone.style.backgroundColor = '#e74c3c';
-                    issenReactionTimeout = setTimeout(() => {
-                        if(!isQteActive) return;
-                        issenState = 'done'; isQteActive = false; ui.mainZone.style.display = 'none'; checkQteResult(); 
-                    }, 500); 
+                    issenReactionTimeout = setTimeout(() => { 
+                        if(!isQteActive) return; issenState = 'done'; isQteActive = false; ui.mainZone.style.display = 'none'; checkQteResult(); 
+                    }, 350); 
                 }, waitTime);
                 return; 
             }
             
-            if (pendingAction === 'safeSlash') {
-                // 【變更】：三條游標之間的「距離」改為隨機，造成每次連擊節奏都不同
-                let gap1 = 20 + Math.random() * 15; // 距離第一條線 20%~35%
-                let gap2 = gap1 + 20 + Math.random() * 15; // 距離第二條線再加 20%~35%
-                multiCursorPos = [0, -gap1, -gap2]; 
-                multiCursorActive = [true, true, true]; currentCursorTarget = 0; 
+            if (qteType === 'reverse') {
+                cursorPosition = 100; cursorDirection = -1; ui.qteCursor.style.left = '100%';
+            } else if (pendingAction === 'safeSlash') {
+                let gap1 = 20 + Math.random() * 15; let gap2 = gap1 + 20 + Math.random() * 15; 
+                multiCursorPos = [0, -gap1, -gap2]; multiCursorActive = [true, true, true]; currentCursorTarget = 0; 
                 ui.qteCursor.style.left = '0%'; document.getElementById('qte-cursor-2').style.left = -gap1 + '%'; document.getElementById('qte-cursor-3').style.left = -gap2 + '%';
                 document.getElementById('qte-cursor-2').style.display = 'block'; document.getElementById('qte-cursor-3').style.display = 'block';
             } else {
-                cursorPosition = 0; cursorDirection = 1; ui.qteCursor.style.left = cursorPosition + '%';
+                cursorPosition = 0; cursorDirection = 1; ui.qteCursor.style.left = '0%';
             }
             
             let lastTime = 0;
@@ -482,33 +647,52 @@
                 if (!lastTime) { lastTime = currentTime; qteReq = requestAnimationFrame(moveCursor); return; }
                 let deltaTime = currentTime - lastTime; lastTime = currentTime; if (deltaTime > 50) deltaTime = 16.66; let timeMultiplier = deltaTime / 16.66;
                 
-                if (qteType === 'fakeout' && !fakeoutTriggered && cursorPosition >= 45 && cursorDirection === 1) { fakeoutTriggered = true; cancelAnimationFrame(qteReq); setTimeout(() => { qteSpeed = 3.5; lastTime = 0; if (isQteActive) qteReq = requestAnimationFrame(moveCursor); }, 500); return; }
-                
-                if (pendingAction === 'safeSlash') {
-                    let allDone = true;
-                    for (let i = 0; i < 3; i++) {
-                        if (multiCursorActive[i]) {
-                            multiCursorPos[i] += (qteSpeed * timeMultiplier);
-                            let cElem = i === 0 ? ui.qteCursor : document.getElementById(`qte-cursor-${i+1}`);
-                            if (multiCursorPos[i] >= 0) cElem.style.left = multiCursorPos[i] + '%';
-                            if (multiCursorPos[i] >= 100) {
-                                multiCursorActive[i] = false; cElem.style.display = 'none'; playSound('miss');
-                                if (currentCursorTarget === i) currentCursorTarget++;
-                            } else { allDone = false; }
-                        }
+                if (targetMoving) {
+                    targetStart += 0.8 * targetMoveDir * timeMultiplier;
+                    if (targetStart > 80) targetMoveDir = -1;
+                    if (targetStart < 10) targetMoveDir = 1;
+                    ui.mainZone.style.left = targetStart + '%';
+                }
+
+                if (qteType === 'lag') {
+                    lagTimer -= deltaTime;
+                    if (lagTimer <= 0) {
+                        isLagPause = !isLagPause;
+                        lagTimer = isLagPause ? 150 : 300 + Math.random() * 200; 
+                        if (!isLagPause) { cursorPosition += 15 * cursorDirection; playSound('click'); } 
                     }
-                    if (allDone) { isQteActive = false; checkQteResult(); } else { qteReq = requestAnimationFrame(moveCursor); }
                 }
-                else if (pendingAction === 'moonHold') {
-                    cursorPosition += (qteSpeed * timeMultiplier * cursorDirection); if (cursorPosition >= 100) { cursorPosition = 100; cursorDirection = -1; } else if (cursorPosition <= 0) { cursorPosition = 0; cursorDirection = 1; } ui.qteCursor.style.left = cursorPosition + '%'; qteReq = requestAnimationFrame(moveCursor);
-                } else {
-                    cursorPosition += (qteSpeed * timeMultiplier); ui.qteCursor.style.left = cursorPosition + '%';
-                    if (cursorPosition >= 100) { 
-                        if (pendingAction === 'moonCombo') { isQteActive = false; endMoonCombo(); } 
-                        else if (qteType === 'multihit' && multiHitCurrent < multiHitMax - 1) { processDefendResult(false, false); if (player.hp === 0) { isQteActive = false; ui.qteArea.style.display = 'none'; setTimeout(() => { ui.msgBox.innerText = `${player.name} 倒下了... 戰鬥失敗。`; bgm.pause(); }, 1500); return; } multiHitCurrent++; cursorPosition = 0; ui.msgBox.innerText = `連續攻擊！(第 ${multiHitCurrent + 1} 擊)`; lastTime = 0; qteReq = requestAnimationFrame(moveCursor); } 
-                        else { isQteActive = false; checkQteResult(); }
-                    } else { qteReq = requestAnimationFrame(moveCursor); }
-                }
+
+                if (!isLagPause) {
+                    if (pendingAction === 'moonHold') {
+                        cursorPosition += (qteSpeed * timeMultiplier * cursorDirection); if (cursorPosition >= 100) { cursorPosition = 100; cursorDirection = -1; } else if (cursorPosition <= 0) { cursorPosition = 0; cursorDirection = 1; } ui.qteCursor.style.left = cursorPosition + '%'; qteReq = requestAnimationFrame(moveCursor);
+                    } else if (pendingAction === 'safeSlash') {
+                        let allDone = true;
+                        for (let i = 0; i < 3; i++) {
+                            if (multiCursorActive[i]) {
+                                multiCursorPos[i] += (qteSpeed * timeMultiplier);
+                                let cElem = i === 0 ? ui.qteCursor : document.getElementById(`qte-cursor-${i+1}`);
+                                if (multiCursorPos[i] >= 0) cElem.style.left = multiCursorPos[i] + '%';
+                                if (multiCursorPos[i] >= 100) { multiCursorActive[i] = false; cElem.style.display = 'none'; playSound('miss'); if (currentCursorTarget === i) currentCursorTarget++; } else { allDone = false; }
+                            }
+                        }
+                        if (allDone) { isQteActive = false; checkQteResult(); } else { qteReq = requestAnimationFrame(moveCursor); }
+                    } else {
+                        cursorPosition += (qteSpeed * timeMultiplier * cursorDirection); ui.qteCursor.style.left = cursorPosition + '%';
+                        let isFinished = (cursorDirection === 1 && cursorPosition >= 100) || (cursorDirection === -1 && cursorPosition <= 0);
+                        if (isFinished) { 
+                            if (pendingAction === 'moonCombo') { isQteActive = false; endMoonCombo(); } 
+                            else if (qteType === 'multihit' && multiHitCurrent < multiHitMax - 1) { 
+                                processDefendResult(false, false); 
+                                if (player.hp === 0) { isQteActive = false; ui.qteArea.style.display = 'none'; setTimeout(() => { ui.msgBox.innerText = `${player.name} 倒下了... 戰鬥失敗。`; bgm.pause(); }, 1500); return; } 
+                                multiHitCurrent++; 
+                                ui.msgBox.innerText = `連續攻擊！(第 ${multiHitCurrent + 1} 擊)`; 
+                                startQteAnimation(); 
+                            } 
+                            else { isQteActive = false; checkQteResult(); }
+                        } else { qteReq = requestAnimationFrame(moveCursor); }
+                    }
+                } else { qteReq = requestAnimationFrame(moveCursor); }
             }
             qteReq = requestAnimationFrame(moveCursor);
         }
@@ -517,26 +701,15 @@
             if (!isQteActive) return; 
             
             if (pendingAction === 'issen') {
-                if (issenState === 'active') {
-                    issenSuccess = true; clearTimeout(issenReactionTimeout); isQteActive = false; issenState = 'done';
-                    ui.mainZone.style.backgroundColor = '#f1c40f'; setTimeout(() => { checkQteResult(); }, 200);
-                } else if (issenState === 'waiting') {
-                    issenSuccess = false; clearTimeout(issenTimeout); isQteActive = false; issenState = 'done';
-                    ui.msgBox.innerText = `太早拔刀了！破綻百出！`; playSound('miss'); setTimeout(() => { checkQteResult(); }, 1000);
-                }
-                return;
+                if (issenState === 'active') { issenSuccess = true; clearTimeout(issenReactionTimeout); isQteActive = false; issenState = 'done'; ui.mainZone.style.backgroundColor = '#f1c40f'; setTimeout(() => { checkQteResult(); }, 200); } 
+                else if (issenState === 'waiting') { issenSuccess = false; clearTimeout(issenTimeout); isQteActive = false; issenState = 'done'; ui.msgBox.innerText = `太早拔刀了！破綻百出！`; playSound('miss'); setTimeout(() => { checkQteResult(); }, 1000); } return;
             }
-            
             if (pendingAction === 'safeSlash') {
                 if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
                     let pos = multiCursorPos[currentCursorTarget];
-                    if (pos >= targetStart && pos <= targetStart + targetWidth) {
-                        playSound('hit'); aoeHitCount++; ui.mainZone.style.backgroundColor = '#f1c40f'; setTimeout(() => { ui.mainZone.style.backgroundColor = '#3498db'; }, 100);
-                    } else { playSound('miss'); }
-                    multiCursorActive[currentCursorTarget] = false;
-                    let cElem = currentCursorTarget === 0 ? ui.qteCursor : document.getElementById(`qte-cursor-${currentCursorTarget+1}`);
-                    cElem.style.display = 'none'; currentCursorTarget++;
-                    if (currentCursorTarget >= 3) { isQteActive = false; cancelAnimationFrame(qteReq); checkQteResult(); }
+                    if (pos >= targetStart && pos <= targetStart + targetWidth) { playSound('hit'); aoeHitCount++; ui.mainZone.style.backgroundColor = '#f1c40f'; setTimeout(() => { ui.mainZone.style.backgroundColor = '#3498db'; }, 100); } else { playSound('miss'); }
+                    multiCursorActive[currentCursorTarget] = false; let cElem = currentCursorTarget === 0 ? ui.qteCursor : document.getElementById(`qte-cursor-${currentCursorTarget+1}`);
+                    cElem.style.display = 'none'; currentCursorTarget++; if (currentCursorTarget >= 3) { isQteActive = false; cancelAnimationFrame(qteReq); checkQteResult(); }
                 }
             }
             else if (pendingAction === 'moonCombo') {
@@ -551,7 +724,13 @@
                 let isPerfect = (cursorPosition >= perfectStart && cursorPosition <= perfectEnd); let isSuccess = (cursorPosition >= targetStart && cursorPosition <= targetStart + targetWidth); processDefendResult(isSuccess, isPerfect);
                 if (player.hp === 0) { isQteActive = false; cancelAnimationFrame(qteReq); ui.qteArea.style.display = 'none'; setTimeout(() => { ui.msgBox.innerText = `${player.name} 倒下了... 戰鬥失敗。`; bgm.pause(); }, 1500); return; }
                 if (isPerfect && player.counterStance) { isQteActive = false; cancelAnimationFrame(qteReq); ui.qteArea.style.display = 'none'; setTimeout(() => { activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 2000); }, 1500); return; }
-                if (multiHitCurrent < multiHitMax - 1) { multiHitCurrent++; cursorPosition = 0; ui.msgBox.innerText = `連續攻擊！(第 ${multiHitCurrent + 1} 擊)`; } else { isQteActive = false; cancelAnimationFrame(qteReq); ui.qteArea.style.display = 'none'; setTimeout(() => { activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 1500); }, 1000); }
+                if (multiHitCurrent < multiHitMax - 1) { 
+                    multiHitCurrent++; 
+                    ui.msgBox.innerText = `連續攻擊！(第 ${multiHitCurrent + 1} 擊)`; 
+                    startQteAnimation(); 
+                } else { 
+                    isQteActive = false; cancelAnimationFrame(qteReq); ui.qteArea.style.display = 'none'; setTimeout(() => { activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 1500); }, 1000); 
+                }
             } else { isQteActive = false; cancelAnimationFrame(qteReq); checkQteResult(); }
         }
 
@@ -562,7 +741,7 @@
             let finalMsg = isPerfect ? `✨ 完美蓄力！月華爆發！\n` : (isSuccess ? `✨ 月華爆發！\n` : `❌ 蓄力時機錯誤... 軟弱的月光\n`);
             enemies.forEach(target => {
                 if (target.isAlive) {
-                    if (target.shield && dmg < 6) { finalMsg += `[${target.name}] 護盾抵擋！ `; playSound('guard'); } 
+                    if (target.shield && dmg < 6) { finalMsg += `[${target.name}] 動態裝甲抵擋了衝擊！ `; playSound('guard'); } 
                     else {
                         if(target.shield && dmg === 6) { finalMsg += `[破盾] `; target.shield = false; updateEnemyStatus(target); }
                         finalMsg += `[${target.name}] -${dmg}HP `; target.hp = Math.max(target.hp - dmg, 0); document.getElementById(`enemy-${target.id}-hp`).innerText = target.hp;
@@ -577,7 +756,7 @@
             ui.qteArea.style.display = 'none'; let target = enemies[currentTargetIndex]; let dmg = comboCount; 
             if (comboCount === 0) { playSound('miss'); ui.msgBox.innerText = `失誤了！鈴仙月兔 踩空摔倒...\n造成了 0 點傷害。`; setTimeout(checkWinCondition, 1500); } 
             else {
-                let msgPrefix = ""; if(target.shield) { target.shield = false; updateEnemyStatus(target); msgPrefix = "狂亂的連踢踏碎了護盾！\n"; }
+                let msgPrefix = ""; if(target.shield) { target.shield = false; updateEnemyStatus(target); msgPrefix = "狂亂的連踢踏碎了動態裝甲！\n"; }
                 playSound('skill');
                 if (comboCount >= 10) ui.msgBox.innerText = `${msgPrefix}太誇張了！無盡的月影踢擊！(Combo: ${comboCount})\n對 ${target.name} 造成了 ${dmg} 點毀滅性傷害。`;
                 else if (comboCount >= 5) ui.msgBox.innerText = `${msgPrefix}漂亮！完美的連環踢！(Combo: ${comboCount})\n對 ${target.name} 造成了 ${dmg} 點傷害。`;
@@ -605,29 +784,32 @@
             ui.qteArea.style.display = 'none'; ui.mainZone.style.display = 'none';
             if (pendingAction === "attack") {
                 let isSuccess = (cursorPosition >= targetStart && cursorPosition <= targetStart + targetWidth); let target = enemies[currentTargetIndex];
-                if (target.shield) { playSound('guard'); ui.msgBox.innerText = `攻擊被彈開！${target.name} 有護盾保護。`; setTimeout(checkWinCondition, 2000); return; }
+                if (target.shield) { playSound('guard'); ui.msgBox.innerText = `攻擊被彈開！${target.name} 有動態裝甲保護。`; setTimeout(checkWinCondition, 2000); return; }
                 let dmg = baseAttack + (isSuccess ? qteBonus : 0); if (isSuccess) playSound('skill'); else playSound('hit');
                 ui.msgBox.innerText = isSuccess ? `會心一擊！對 ${target.name} 造成 ${dmg} 點傷害。` : `普通攻擊。對 ${target.name} 造成 ${dmg} 點傷害。`;
                 applyDamageToTarget(target, dmg);
             } 
             else if (pendingAction === "safeSlash") {
                 let target = enemies[currentTargetIndex]; let dmg = 0;
-                if (target.shield) { 
-                    if (aoeHitCount === 3) { target.shield = false; updateEnemyStatus(target); dmg = 9; playSound('skill'); ui.msgBox.innerText = `✨ 完美星屑斬！連續的劍光硬生生切碎了護盾！\n對 ${target.name} 造成 ${dmg} 點傷害。`; }
-                    else if (aoeHitCount > 0) { target.shield = false; updateEnemyStatus(target); dmg = aoeHitCount * 1; playSound('hit'); ui.msgBox.innerText = `星屑斬勉強擊碎了護盾！(傷害被抵銷)\n對 ${target.name} 造成 ${dmg} 點微弱傷害。`; }
-                    else { playSound('guard'); ui.msgBox.innerText = `攻擊完全被彈開！\n${player.name} 的攻擊沒有抓到節奏。`; setTimeout(checkWinCondition, 1500); return; }
-                } 
+                if (target.shield) { playSound('guard'); ui.msgBox.innerText = `攻擊被彈開！${target.name} 的裝甲擋下了星屑斬。\n(提示：需要使用「一閃」來破盾！)`; setTimeout(checkWinCondition, 2000); return; } 
                 else {
-                    if (aoeHitCount === 3) { dmg = 9; playSound('skill'); ui.msgBox.innerText = `✨ 完美星屑斬！全段命中觸發暴擊！\n對 ${target.name} 造成 ${dmg} 點傷害。`; }
-                    else if (aoeHitCount > 0) { dmg = aoeHitCount * 3; playSound('hit'); ui.msgBox.innerText = `星屑斬！(${aoeHitCount} 段命中)\n對 ${target.name} 造成 ${dmg} 點傷害。`; }
+                    if (aoeHitCount === 3) { dmg = 7; playSound('skill'); ui.msgBox.innerText = `✨ 完美星屑斬！全段命中觸發暴擊！\n對 ${target.name} 造成 ${dmg} 點傷害。`; }
+                    else if (aoeHitCount > 0) { dmg = aoeHitCount * 2; playSound('hit'); ui.msgBox.innerText = `星屑斬！(${aoeHitCount} 段命中)\n對 ${target.name} 造成 ${dmg} 點傷害。`; }
                     else { playSound('miss'); ui.msgBox.innerText = `揮空了... ${player.name} 的攻擊沒有抓到節奏。`; setTimeout(checkWinCondition, 1500); return; }
                 }
                 applyDamageToTarget(target, dmg);
             }
             else if (pendingAction === "issen") {
                 let target = enemies[currentTargetIndex];
-                if (issenSuccess) { playSound('skill'); let dmg = 10; if(target.shield) { target.shield = false; updateEnemyStatus(target); ui.msgBox.innerText = `⚡ 燕返一閃！切裂了護盾！\n對 ${target.name} 造成 ${dmg} 點致命傷害。`; } else { ui.msgBox.innerText = `⚡ 燕返一閃！\n對 ${target.name} 造成 ${dmg} 點致命傷害。`; } applyDamageToTarget(target, dmg); } 
-                else { if (issenState !== 'waiting') { playSound('miss'); ui.msgBox.innerText = `揮空了... ${player.name} 的一閃沒有擊中目標。`; } setTimeout(checkWinCondition, 1500); }
+                if (issenSuccess) { 
+                    playSound('skill'); let dmg;
+                    if(target.shield) { dmg = 10; target.shield = false; updateEnemyStatus(target); ui.msgBox.innerText = `⚡ 燕返一閃！切裂了動態裝甲！\n對 ${target.name} 造成 ${dmg} 點致命傷害。`; } 
+                    else { dmg = 5; ui.msgBox.innerText = `⚡ 燕返一閃！\n(目標無護盾，威力減半)\n對 ${target.name} 造成 ${dmg} 點傷害。`; } 
+                    applyDamageToTarget(target, dmg); 
+                } else { 
+                    if (issenState !== 'waiting') { playSound('miss'); ui.msgBox.innerText = `揮空了... ${player.name} 的一閃沒有擊中目標。`; } 
+                    setTimeout(checkWinCondition, 1500); 
+                }
             }
             else if (pendingAction === "aoe_bredeia") {
                 let dmg = aoeBaseAttack + (aoeHitCount * 2); let finalMsg = `✨星空爆發！(Combo: ${aoeHitCount})\n`; playSound('skill');
@@ -642,19 +824,55 @@
                 ui.msgBox.innerText = finalMsg; setTimeout(checkWinCondition, 2500); 
             }
             else if (pendingAction === "defend") {
-                let isPerfect = (cursorPosition >= perfectStart && cursorPosition <= perfectEnd); let isSuccess = (cursorPosition >= targetStart && cursorPosition <= targetStart + targetWidth);
-                if (qteType === 'multihit') { processDefendResult(false, false); } else { processDefendResult(isSuccess, isPerfect); }
-                if (player.hp === 0) { setTimeout(() => { ui.msgBox.innerText = `${player.name} 倒下了... 戰鬥失敗。`; bgm.pause(); }, 1500); return; }
+                let isPerfect = (cursorPosition >= perfectStart && cursorPosition <= perfectEnd); let isSuccess = (cursorPosition >= targetStart && cursorPosition <= targetStart + targetWidth); processDefendResult(isSuccess, isPerfect);
+                if (player.hp === 0) { isQteActive = false; cancelAnimationFrame(qteReq); ui.qteArea.style.display = 'none'; setTimeout(() => { ui.msgBox.innerText = `${player.name} 倒下了... 戰鬥失敗。`; bgm.pause(); }, 1500); return; }
                 let allDead = enemies.every(e => !e.isAlive); if (allDead) { setTimeout(checkWinCondition, 1000); return; }
                 activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 1500);
             }
         }
 
-        function startMashQte() {
-            ui.mashArea.style.display = 'block'; mashCount = 0; mashTimeLeft = 2000; isMashing = true; ui.mashFill.style.width = '0%'; ui.mashTimer.innerText = "2.0 秒"; playSound('skill'); 
-            mashInterval = setInterval(() => { mashTimeLeft -= 50; ui.mashTimer.innerText = (mashTimeLeft / 1000).toFixed(1) + " 秒"; if (mashTimeLeft <= 0) { clearInterval(mashInterval); isMashing = false; ui.mashTimer.innerText = "時間到！"; setTimeout(checkMashResult, 500); } }, 50);
+        // --- 防禦拼刀小遊戲 ---
+        function startDefensiveMash() {
+            ui.qteArea.style.display = 'none';
+            ui.mashArea.style.display = 'block'; mashCount = 0; mashTimeLeft = 2000; isMashing = true; isDefensiveMash = true; 
+            ui.mashFill.style.width = '0%'; ui.mashFill.style.backgroundColor = "#e74c3c"; ui.mashTimer.innerText = "2.0 秒"; 
+            document.getElementById('mash-btn').innerText = "死鬥！狂按抵抗！"; document.getElementById('mash-btn').style.backgroundColor = "#e74c3c";
+            playSound('skill'); 
+            mashInterval = setInterval(() => { 
+                mashTimeLeft -= 50; ui.mashTimer.innerText = (mashTimeLeft / 1000).toFixed(1) + " 秒"; 
+                if (mashTimeLeft <= 0) { clearInterval(mashInterval); isMashing = false; ui.mashTimer.innerText = "時間到！"; setTimeout(checkDefensiveMashResult, 500); } 
+            }, 50);
         }
-        function doMash() { if (!isMashing) return; mashCount++; let fillPercent = Math.min((mashCount / 15) * 100, 100); ui.mashFill.style.width = fillPercent + '%'; if (mashCount >= 15) ui.mashFill.style.backgroundColor = "#f1c40f"; }
+        
+        // --- 技能連打與共用 ---
+        function startMashQte() { ui.mashArea.style.display = 'block'; mashCount = 0; mashTimeLeft = 2000; isMashing = true; isDefensiveMash = false; ui.mashFill.style.width = '0%'; ui.mashFill.style.backgroundColor = "#9b59b6"; ui.mashTimer.innerText = "2.0 秒"; document.getElementById('mash-btn').innerText = "瘋狂連打！"; document.getElementById('mash-btn').style.backgroundColor = "#9b59b6"; playSound('skill'); mashInterval = setInterval(() => { mashTimeLeft -= 50; ui.mashTimer.innerText = (mashTimeLeft / 1000).toFixed(1) + " 秒"; if (mashTimeLeft <= 0) { clearInterval(mashInterval); isMashing = false; ui.mashTimer.innerText = "時間到！"; setTimeout(checkMashResult, 500); } }, 50); }
+        function doMash() { 
+            if (!isMashing) return; mashCount++; let fillPercent = Math.min((mashCount / 15) * 100, 100); ui.mashFill.style.width = fillPercent + '%'; 
+            if (mashCount >= 15) { 
+                ui.mashFill.style.backgroundColor = "#f1c40f"; 
+                if (isDefensiveMash) document.getElementById('mash-btn').innerText = "壓制！"; 
+            } 
+        }
+
+        function checkDefensiveMashResult() {
+            ui.mashArea.style.display = 'none'; isDefensiveMash = false;
+            document.getElementById('mash-btn').innerText = "瘋狂連打！"; document.getElementById('mash-btn').style.backgroundColor = "#9b59b6";
+            let attacker = enemies[activeEnemyIndex];
+            
+            if (mashCount >= 15) { 
+                playSound('skill'); ui.msgBox.innerText = `✨ 拼刀勝利！彈開了電鋸並造成反傷！\n對 ${attacker.name} 造成 5 點傷害。`;
+                attacker.hp = Math.max(attacker.hp - 5, 0); document.getElementById(`enemy-${attacker.id}-hp`).innerText = attacker.hp;
+            } else { 
+                playSound('miss'); let dmg = 8; ui.msgBox.innerText = `💥 力量不足！被電鋸狠狠撕裂！\n受到了 ${dmg} 點傷害。`; 
+                player.hp = Math.max(player.hp - dmg, 0); ui.playerHp.innerText = player.hp;
+            }
+            
+            if (player.hp === 0) { setTimeout(() => { ui.msgBox.innerText = `${player.name} 倒下了... 戰鬥失敗。`; bgm.pause(); }, 1500); return; }
+            if (attacker.hp === 0) { attacker.isAlive = false; let box = document.getElementById(`enemy-${attacker.id}-box`); box.style.transform = 'scale(0)'; box.style.opacity = '0'; setTimeout(() => { box.style.display = 'none'; checkWinCondition(); }, 500); return; }
+            
+            activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 1500);
+        }
+
         function checkMashResult() {
             ui.mashArea.style.display = 'none'; ui.mashFill.style.backgroundColor = "#9b59b6"; let target = enemies[currentTargetIndex]; let extraDmg = Math.min(Math.floor(mashCount / 3), 5); let totalDmg = skillBaseAttack + extraDmg; let msgPrefix = "";
             if(target.shield) { target.shield = false; updateEnemyStatus(target); msgPrefix = "擊碎護盾！\n"; }
@@ -674,9 +892,11 @@
             let allDead = enemies.every(e => !e.isAlive);
             if (allDead) { 
                 playSound('skill'); 
-                if (isStoryMode) { ui.msgBox.innerText = "序章訓練完成！\n鈴仙凪人 的數據已記錄。\n(更多劇情即將解鎖...)"; } 
-                else { ui.msgBox.innerText = "所有目標已被擊破！戰鬥勝利！\n(請重整網頁回到標題)"; }
-                bgm.pause(); 
+                if (isStoryMode) { 
+                    ui.msgBox.innerText = "戰鬥結束！成功擊退了敵人！"; 
+                    setTimeout(() => { bgm.pause(); resumeStoryAfterBattle(); }, 2000);
+                } 
+                else { ui.msgBox.innerText = "所有目標已被擊破！戰鬥勝利！\n(請重整網頁回到標題)"; bgm.pause(); }
             } else { startEnemyPhase(); }
         }
 
@@ -693,26 +913,57 @@
         function executeSingleEnemyAI(enemy) {
             pendingAction = "defend"; qteType = 'normal'; qteSpeed = 1.2; fakeoutTriggered = false; multiHitCurrent = 0; multiHitMax = 1; updatePlayerStatus(); 
 
-            if (enemy.name === "訓練人偶PRO") {
-                if (enemy.isCharging) {
-                    enemy.isCharging = false; updateEnemyStatus(enemy); enemy.lastMove = "ultimate"; 
-                    currentEnemyAttack = { name: "極致過載打擊", dmg: 12, appliesPoison: false, isUltimate: true }; qteSpeed = 4.0; ui.msgBox.innerText = `訓練人偶PRO 釋放了【極致過載打擊】！\n(警告！極速重擊！)`;
-                    setTimeout(() => { configureQteZones('defend'); targetStart = 65; targetWidth = 20; if (player.counterStance) { perfectStart = 72; perfectEnd = 78; ui.perfectZone.style.backgroundColor = '#ff4757'; } else { perfectStart = 73; perfectEnd = 77; ui.perfectZone.style.backgroundColor = '#f1c40f'; } ui.mainZone.style.left = '65%'; ui.mainZone.style.width = '20%'; ui.perfectZone.style.left = perfectStart + '%'; ui.perfectZone.style.width = (perfectEnd - perfectStart) + '%'; setupQteUI("click", player.counterStance ? "防禦 / 反擊！" : "防禦 / 閃避！", "#e74c3c", `致命攻擊！`); startQteAnimation(); }, 2000); return; 
-                }
-                let moves = ["charge", "fakeout", "poison"]; if (!enemy.shield) moves.push("shield"); 
-                if (moves.includes(enemy.lastMove) && moves.length > 1) { moves = moves.filter(m => m !== enemy.lastMove); }
+            if (enemy.name === "廢墟清掃者") {
+                let moves = ["reverse_hack", "lag_saw", "clash", "shoot"]; 
+                if (!enemy.shield && Math.random() < 0.4) { moves = ["armor"]; }
                 let chosen = moves[Math.floor(Math.random() * moves.length)]; enemy.lastMove = chosen; 
 
+                if (chosen === "armor") { 
+                    enemy.shield = true; updateEnemyStatus(enemy); 
+                    ui.msgBox.innerText = `廢墟清掃者 啟動磁力！\n廢鐵在周圍高速旋轉，形成了【動態裝甲】！`; 
+                    activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 2500); 
+                }
+                else if (chosen === "reverse_hack") { 
+                    qteType = 'reverse'; currentEnemyAttack = { name: "逆向演算", dmg: 4, appliesPoison: false }; qteSpeed = 1.5; 
+                    ui.msgBox.innerText = `廢墟清掃者 釋放干擾電波！\n【系統駭入】警告：視覺神經錯亂，游標反轉！`; 
+                    setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "防禦！", "#3498db", `逆向攻擊！`); startQteAnimation(); }, 2500); 
+                }
+                else if (chosen === "lag_saw") { 
+                    qteType = 'lag'; currentEnemyAttack = { name: "殘影斬擊", dmg: 6, appliesPoison: false }; qteSpeed = 1.0; 
+                    ui.msgBox.innerText = `廢墟清掃者 伺服馬達嚴重卡頓！\n警告：動作產生【殘影與瞬移】！`; 
+                    setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "防禦！", "#3498db", `預判瞬移時機！`); startQteAnimation(); }, 2500); 
+                }
+                else if (chosen === "clash") { 
+                    ui.msgBox.innerText = `廢墟清掃者 系統暴走！\n高溫電鋸直接迎面壓來！【極限角力】開始！`; 
+                    setTimeout(() => { startDefensiveMash(); }, 2500); 
+                }
+                else if (chosen === "shoot") {
+                    qteType = 'multihit'; multiHitMax = 3; qteSpeed = 2.0; currentEnemyAttack = { name: "機槍掃射", dmg: 2, appliesPoison: false };
+                    ui.msgBox.innerText = `廢墟清掃者 發動【機槍掃射】！\n(連續防禦 3 次！)`; 
+                    setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "連續防禦！", "#3498db", `攻擊！(第 1 擊)`); startQteAnimation(); }, 2000); 
+                }
+            }
+            else if (enemy.name === "正常訓練人偶") {
+                let moves = ["attack", "shield"]; if (enemy.shield) moves = ["attack"]; let chosen = moves[Math.floor(Math.random() * moves.length)]; enemy.lastMove = chosen; 
+                if (chosen === "shield") { enemy.shield = true; updateEnemyStatus(enemy); ui.msgBox.innerText = `正常訓練人偶 啟動了基礎護盾！\n(教學：使用「一閃」來擊碎護盾吧！)\n(注意：星屑斬無法破盾)`; activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 2500); }
+                else { currentEnemyAttack = { name: "基礎劈砍", dmg: 3, appliesPoison: false }; qteSpeed = 0.8; ui.msgBox.innerText = `正常訓練人偶 揮出基礎劈砍！\n(教學：等游標進入藍色區塊時，點擊「防禦！」按鈕)`; setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "防禦！", "#3498db", `準備防禦！`); startQteAnimation(); }, 2500); }
+            }
+            else if (enemy.name === "基礎無人機") {
+                currentEnemyAttack = { name: "微弱雷射", dmg: 2, appliesPoison: false }; qteSpeed = 1.0; ui.msgBox.innerText = `基礎無人機 發射了雷射！\n(教學：如果使用「見切架勢」並按中黃色區塊，可以無傷反彈攻擊喔！)`; setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "防禦！", "#3498db", `雷射襲來！`); startQteAnimation(); }, 2500); 
+            }
+            else if (enemy.name === "訓練人偶PRO") {
+                if (enemy.isCharging) {
+                    enemy.isCharging = false; updateEnemyStatus(enemy); enemy.lastMove = "ultimate"; currentEnemyAttack = { name: "極致過載打擊", dmg: 12, appliesPoison: false, isUltimate: true }; qteSpeed = 4.0; ui.msgBox.innerText = `訓練人偶PRO 釋放了【極致過載打擊】！\n(警告！極速重擊！)`;
+                    setTimeout(() => { configureQteZones('defend'); targetStart = 65; targetWidth = 20; if (player.counterStance) { perfectStart = 72; perfectEnd = 78; ui.perfectZone.style.backgroundColor = '#ff4757'; } else { perfectStart = 73; perfectEnd = 77; ui.perfectZone.style.backgroundColor = '#f1c40f'; } ui.mainZone.style.left = '65%'; ui.mainZone.style.width = '20%'; ui.perfectZone.style.left = perfectStart + '%'; ui.perfectZone.style.width = (perfectEnd - perfectStart) + '%'; setupQteUI("click", player.counterStance ? "防禦 / 反擊！" : "防禦 / 閃避！", "#e74c3c", `致命攻擊！`); startQteAnimation(); }, 2000); return; 
+                }
+                let moves = ["charge", "fakeout", "poison"]; if (!enemy.shield) moves.push("shield"); if (moves.includes(enemy.lastMove) && moves.length > 1) { moves = moves.filter(m => m !== enemy.lastMove); } let chosen = moves[Math.floor(Math.random() * moves.length)]; enemy.lastMove = chosen; 
                 if (chosen === "shield") { enemy.shield = true; updateEnemyStatus(enemy); ui.msgBox.innerText = `訓練人偶PRO 啟動了能量護盾！物理攻擊減免！`; activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 2000); }
                 else if (chosen === "charge") { enemy.isCharging = true; updateEnemyStatus(enemy); ui.msgBox.innerText = `訓練人偶PRO 正在進行核心蓄能...\n(下回合將發動極致過載！)`; activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 2000); }
                 else if (chosen === "fakeout") { qteType = 'fakeout'; currentEnemyAttack = { name: "變速測試劈砍", dmg: 6, appliesPoison: false }; ui.msgBox.innerText = `訓練人偶PRO 舉起重刃...\n(警告：引擎變速中！)`; setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "防禦 / 閃避！", "#3498db", `看準時機！`); startQteAnimation(); }, 1500); }
                 else if (chosen === "poison") { currentEnemyAttack = { name: "高壓電擊棍", dmg: 4, appliesPoison: true }; ui.msgBox.innerText = `訓練人偶PRO 揮出【高壓電擊棍】！\n(附帶麻痺干擾效果...)`; setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "防禦 / 閃避！", "#3498db", `電擊襲來！`); startQteAnimation(); }, 1500); }
             } 
             else if (enemy.name === "無人機僕從") {
-                let moves = ["multihit", "fast"]; if (!player.blinded) moves.push("blind"); 
-                if (moves.includes(enemy.lastMove) && moves.length > 1) { moves = moves.filter(m => m !== enemy.lastMove); }
-                let chosen = moves[Math.floor(Math.random() * moves.length)]; enemy.lastMove = chosen;
-
+                let moves = ["multihit", "fast"]; if (!player.blinded) moves.push("blind"); if (moves.includes(enemy.lastMove) && moves.length > 1) { moves = moves.filter(m => m !== enemy.lastMove); } let chosen = moves[Math.floor(Math.random() * moves.length)]; enemy.lastMove = chosen;
                 if (chosen === "blind") { player.blinded = true; updatePlayerStatus(); ui.msgBox.innerText = `無人機僕從 投擲了【致盲閃光彈】！\n${player.name} 的視線被干擾了！`; activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 2000); }
                 else if (chosen === "multihit") { qteType = 'multihit'; multiHitMax = 3; qteSpeed = 1.5; currentEnemyAttack = { name: "連續打擊測試", dmg: 2, appliesPoison: false }; ui.msgBox.innerText = `無人機僕從 發動【連續打擊測試】！\n(連續防禦 3 次！)`; setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "連續防禦！", "#3498db", `攻擊！(第 1 擊)`); startQteAnimation(); }, 1500); }
                 else if (chosen === "fast") { qteSpeed = 2.5; currentEnemyAttack = { name: "急速俯衝", dmg: 3, appliesPoison: false }; ui.msgBox.innerText = `無人機僕從 啟動噴射引擎！\n(極高速衝撞！)`; setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "防禦 / 閃避！", "#3498db", `快速攻擊襲來！`); startQteAnimation(); }, 1500); }
@@ -721,4 +972,3 @@
     </script>
 </body>
 </html>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        >>us: 10px; padding: 10px; width: 130px; background-color: #3a3a3a; transition: all 0.5s ease; transform-origin: center; }>                                                                                                                                                                                      .story-btn.disabled { background-color: #555; color: #888; border-color: #777; cursor: not-allowed; }>us: 10px; padding: 10px; width: 130px; background-color: #3a3a3a; transition: all 0.5s ease; transform-origin: center; }>>us: 10px; padding: 10px; width: 130px; background-color: #3a3a3a; transition: all 0.5s ease; transform-origin: center; }>                                                                                                                                                                                      .story-btn.disabled { background-color: #555; color: #888; border-color: #777; cursor: not-allowed; }>us: 10px; padding: 10px; width: 130px; background-color: #3a3a3a; transition: all 0.5s ease; trans>
