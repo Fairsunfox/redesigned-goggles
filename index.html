@@ -186,7 +186,7 @@
         function playSound(type) { if(sfx[type]) { sfx[type].currentTime = 0; sfx[type].play().catch(e => {}); } }
 
         // ==========================================
-        // 📖 劇本資料庫 (含強制選項)
+        // 📖 劇本資料庫
         // ==========================================
         const storyScript = [
             { speaker: "", text: "在一個昏暗的場景，一名銀髮少女坐在沙發上翻閱著某本書籍。", bg: "#1a1a2e" },
@@ -228,14 +228,8 @@
             { speaker: "", text: "（經過了一段時間的休息後，鈴仙凪人再次找到了布蕾蒂雅）", bg: "#0a0a2a" },
             { speaker: "布蕾蒂雅", text: "看來你似乎休息好了。\n不過在開始你的旅途之前，我有義務測試一下你的戰鬥能力。", bg: "#0a0a2a" },
             { speaker: "", text: "（布蕾蒂雅從某處拿出了一本書）", bg: "#0a0a2a" },
-            { 
-                speaker: "布蕾蒂雅", text: "我先問你，你熟悉 QTE 的戰鬥方式嗎？", bg: "#0a0a2a", 
-                choices: [{text: "會", valid: true}, {text: "不會", valid: false}] 
-            },
-            { 
-                speaker: "布蕾蒂雅", text: "不錯，那你需要新手教學嗎？", bg: "#0a0a2a", 
-                choices: [{text: "需要", valid: false}, {text: "不需要", valid: true}] 
-            },
+            { speaker: "布蕾蒂雅", text: "我先問你，你熟悉 QTE 的戰鬥方式嗎？", bg: "#0a0a2a", choices: [{text: "會", valid: true}, {text: "不會", valid: false}] },
+            { speaker: "布蕾蒂雅", text: "不錯，那你需要新手教學嗎？", bg: "#0a0a2a", choices: [{text: "需要", valid: false}, {text: "不需要", valid: true}] },
             { speaker: "布蕾蒂雅", text: "真的假的，那就讓我看看你的實力吧！", bg: "#0a0a2a" }
         ];
 
@@ -259,9 +253,10 @@
             storyChoices: document.getElementById('story-choices'), storyHint: document.getElementById('story-hint')
         };
 
-        // --- 多游標專用變數 ---
+        // 一閃與多游標專用變數
         let cursorPosition = 0, qteReq, isQteActive = false; let cursorDirection = 1; 
         let multiCursorPos = [0, 0, 0]; let multiCursorActive = [false, false, false]; let currentCursorTarget = 0;
+        let issenState = ''; let issenTimeout; let issenReactionTimeout; let issenSuccess = false;
 
         let pendingAction = "", currentTargetIndex = 0, activeEnemyIndex = 0; let targetStart = 0, targetWidth = 20, perfectStart = 0, perfectEnd = 0;
         let aoeHitStatus = [false, false, false], aoeHitCount = 0; let qteSpeed = 1.2, qteType = 'normal'; 
@@ -273,101 +268,61 @@
             document.getElementById(screenId).classList.add('active');
         }
 
-        // --- 劇情系統邏輯 ---
+        // --- 劇情系統 ---
         function startStoryMode() {
-            playSound('click');
-            isStoryMode = true; selectedChar = 'nagito'; selectedBoss = 'dummy';
-            currentStoryIndex = 0;
-            showScreen('screen-story');
-            renderStoryLine();
+            playSound('click'); isStoryMode = true; selectedChar = 'nagito'; selectedBoss = 'dummy';
+            currentStoryIndex = 0; showScreen('screen-story'); renderStoryLine();
         }
 
         function renderStoryLine() {
             if (currentStoryIndex >= storyScript.length) {
-                bgm.currentTime = 0; bgm.play().catch(e => {});
-                startBattle(); return;
+                bgm.currentTime = 0; bgm.play().catch(e => {}); startBattle(); return;
             }
-            
             let line = storyScript[currentStoryIndex];
             document.getElementById('screen-story').style.backgroundColor = line.bg;
             document.getElementById('story-speaker').innerText = line.speaker ? `【${line.speaker}】` : "";
-            
-            ui.storyChoices.style.display = 'none';
-            ui.storyHint.style.display = 'none'; // 打字時隱藏提示
-            
-            fullText = line.text;
-            document.getElementById('story-text').innerText = "";
-            document.getElementById('story-text').style.color = line.textColor || "#fff";
+            ui.storyChoices.style.display = 'none'; ui.storyHint.style.display = 'none';
+            fullText = line.text; document.getElementById('story-text').innerText = ""; document.getElementById('story-text').style.color = line.textColor || "#fff";
             isTyping = true;
-            
-            let charIndex = 0;
-            clearInterval(typeTimer);
+            let charIndex = 0; clearInterval(typeTimer);
             typeTimer = setInterval(() => {
-                document.getElementById('story-text').innerText += fullText[charIndex];
-                charIndex++;
-                if (charIndex >= fullText.length) {
-                    clearInterval(typeTimer);
-                    isTyping = false;
-                    checkStoryChoices(); // 打字結束後檢查是否有選項
-                }
+                document.getElementById('story-text').innerText += fullText[charIndex]; charIndex++;
+                if (charIndex >= fullText.length) { clearInterval(typeTimer); isTyping = false; checkStoryChoices(); }
             }, 30); 
         }
 
         function checkStoryChoices() {
             let line = storyScript[currentStoryIndex];
             if (line.choices) {
-                ui.storyHint.style.display = 'none';
-                let html = "";
+                ui.storyHint.style.display = 'none'; let html = "";
                 line.choices.forEach(c => {
                     if (c.valid) html += `<button class="story-btn" onpointerdown="chooseOption(event)">${c.text}</button>`;
                     else html += `<button class="story-btn disabled" onpointerdown="rejectOption(event)">${c.text}</button>`;
                 });
-                ui.storyChoices.innerHTML = html;
-                ui.storyChoices.style.display = 'flex';
-            } else {
-                ui.storyHint.style.display = 'block';
-            }
+                ui.storyChoices.innerHTML = html; ui.storyChoices.style.display = 'flex';
+            } else { ui.storyHint.style.display = 'block'; }
         }
 
         function advanceStory(e) {
             let line = storyScript[currentStoryIndex];
-            if (line.choices && !isTyping) return; // 如果有選項且打字完了，禁止點擊背景繼續
-            
-            if (isTyping) {
-                clearInterval(typeTimer);
-                document.getElementById('story-text').innerText = fullText;
-                isTyping = false;
-                checkStoryChoices();
-            } else {
-                playSound('click');
-                currentStoryIndex++;
-                renderStoryLine();
-            }
+            if (line.choices && !isTyping) return; 
+            if (isTyping) { clearInterval(typeTimer); document.getElementById('story-text').innerText = fullText; isTyping = false; checkStoryChoices(); } 
+            else { playSound('click'); currentStoryIndex++; renderStoryLine(); }
         }
+        function chooseOption(e) { e.stopPropagation(); playSound('click'); ui.storyChoices.style.display = 'none'; currentStoryIndex++; renderStoryLine(); }
+        function rejectOption(e) { e.stopPropagation(); playSound('miss'); }
 
-        function chooseOption(e) {
-            e.stopPropagation(); // 阻止事件傳遞給背景
-            playSound('click');
-            ui.storyChoices.style.display = 'none';
-            currentStoryIndex++;
-            renderStoryLine();
-        }
-
-        function rejectOption(e) {
-            e.stopPropagation();
-            playSound('miss'); // 點擊錯誤選項發出警告音
-        }
-        // ------------------
-
+        // --- 戰鬥系統 ---
         function selectCharacter(charId) { isStoryMode = false; selectedChar = charId; showScreen('screen-boss'); }
         function selectBoss(bossId) { selectedBoss = bossId; playSound('click'); bgm.currentTime = 0; bgm.play().catch(e => {}); startBattle(); }
 
         function startBattle() {
             let cd = charData[selectedChar];
-            player = { hp: cd.hp, maxHp: cd.hp, sp: cd.sp, maxSp: cd.sp, poisoned: false, blinded: false, counterStance: false };
+            // 【BUG修復】：將 cd.name 存入 player.name 中，解決 undefined 的問題
+            player = { name: cd.name, hp: cd.hp, maxHp: cd.hp, sp: cd.sp, maxSp: cd.sp, poisoned: false, blinded: false, counterStance: false };
             inventory = { potion: { count: isStoryMode ? 8 : 5, healHp: 10, name: "回復藥" }, ether: { count: isStoryMode ? 8 : 5, healSp: 15, name: "魔法水" }, antidote: { count: 3, name: "解毒草" } };
             
-            ui.playerName.innerText = cd.name; ui.playerHp.innerText = player.hp; ui.playerMaxHp.innerText = player.maxHp; ui.playerSp.innerText = player.sp; ui.playerMaxSp.innerText = player.maxSp;
+            ui.playerName.innerText = player.name; ui.playerHp.innerText = player.hp; ui.playerMaxHp.innerText = player.maxHp; ui.playerSp.innerText = player.sp; ui.playerMaxSp.innerText = player.maxSp;
             updatePlayerStatus();
 
             ui.skillMenu.innerHTML = '';
@@ -396,7 +351,7 @@
             document.getElementById('potion-count').innerText = inventory.potion.count; document.getElementById('ether-count').innerText = inventory.ether.count; document.getElementById('antidote-count').innerText = inventory.antidote.count;
 
             if (isStoryMode) { ui.msgBox.innerText = `【虛擬訓練程序啟動】\n讀取紀錄者：鈴仙凪人 的戰鬥數據。\n請開始你的行動。`; } 
-            else { ui.msgBox.innerText = `戰鬥開始！輪到 ${cd.name} 行動。`; }
+            else { ui.msgBox.innerText = `戰鬥開始！輪到 ${player.name} 行動。`; }
             
             ui.actionMenu.style.display = 'flex'; ui.skillMenu.style.display = 'none'; ui.itemMenu.style.display = 'none'; ui.targetMenu.style.display = 'none'; ui.qteArea.style.display = 'none'; ui.mashArea.style.display = 'none';
             activeEnemyIndex = 0; showScreen('screen-battle');
@@ -455,10 +410,16 @@
             if (pendingAction === 'skill') { player.sp -= skillCost; ui.playerSp.innerText = player.sp; ui.msgBox.innerText = `對 ${enemies[index].name} 施展【破甲擊】！\n(2秒內瘋狂連打集氣！)`; startMashQte(); } 
             else if (pendingAction === 'safeSlash') { 
                 player.sp -= 2; ui.playerSp.innerText = player.sp; configureQteZones('safeSlash'); 
-                setupQteUI("click", "三連斬！", "#3498db", `對 ${enemies[index].name} 施展【星屑斬】！\n(看準節奏！當線進入藍區時點擊！)`); 
-                qteSpeed = 1.0; qteType = 'normal'; startQteAnimation(); 
+                // 【變更】：整體速度大幅提升，並加入隨機要素 (1.5 ~ 2.5倍速)
+                qteSpeed = 1.5 + Math.random() * 1.0; 
+                setupQteUI("click", "三連斬！", "#3498db", `對 ${enemies[index].name} 施展【星屑斬】！\n(注意：每次揮劍速度與節奏都是隨機的！)`); 
+                qteType = 'normal'; startQteAnimation(); 
             } 
-            else if (pendingAction === 'issen') { player.sp -= 3; ui.playerSp.innerText = player.sp; configureQteZones('issen'); setupQteUI("click", "拔刀！", "#e74c3c", `對 ${enemies[index].name} 施展【一閃】！\n(經過正中央時點擊)`); qteSpeed = 3.2; qteType = 'normal'; startQteAnimation(); } 
+            else if (pendingAction === 'issen') { 
+                player.sp -= 3; ui.playerSp.innerText = player.sp; configureQteZones('issen'); 
+                setupQteUI("click", "拔刀！", "#e74c3c", `對 ${enemies[index].name} 施展【一閃】！\n(屏氣凝神...等待紅光出現的瞬間拔刀！)`); 
+                qteType = 'normal'; startQteAnimation(); 
+            } 
             else if (pendingAction === 'moonCombo') { player.sp -= 4; ui.playerSp.innerText = player.sp; comboCount = 0; configureQteZones('moonCombo'); setupQteUI("click", "踩踏！", "#e056fd", `對 ${enemies[index].name} 發動【連環踢】！\n(進入區域時不斷點擊)`); startQteAnimation(); } 
             else { configureQteZones('attack'); setupQteUI("click", "打擊！", "#ff9f43", `準備攻擊 ${enemies[index].name}！`); qteSpeed = 1.2; qteType = 'normal'; startQteAnimation(); }
         }
@@ -468,13 +429,8 @@
             document.getElementById('qte-cursor-2').style.display = 'none'; document.getElementById('qte-cursor-3').style.display = 'none'; ui.qteCursor.style.display = 'block';
 
             if (type === 'attack') { targetStart = 70; targetWidth = 20; perfectStart = -1; perfectEnd = -1; ui.mainZone.style.left = targetStart + '%'; ui.mainZone.style.width = targetWidth + '%'; ui.mainZone.style.backgroundColor = '#2ecc71'; ui.mainZone.style.display = 'block'; } 
-            else if (type === 'safeSlash') { 
-                // 星屑斬：單一判定區 (75%位置)，但有三個游標
-                targetStart = 75; targetWidth = 15; perfectStart = -1; perfectEnd = -1; 
-                ui.mainZone.style.left = targetStart + '%'; ui.mainZone.style.width = targetWidth + '%'; ui.mainZone.style.backgroundColor = '#3498db'; ui.mainZone.style.display = 'block'; 
-                aoeHitCount = 0; 
-            } 
-            else if (type === 'issen') { targetStart = 47; targetWidth = 6; perfectStart = -1; perfectEnd = -1; ui.mainZone.style.left = targetStart + '%'; ui.mainZone.style.width = targetWidth + '%'; ui.mainZone.style.backgroundColor = '#e74c3c'; ui.mainZone.style.display = 'block'; } 
+            else if (type === 'safeSlash') { targetStart = 75; targetWidth = 15; perfectStart = -1; perfectEnd = -1; ui.mainZone.style.left = targetStart + '%'; ui.mainZone.style.width = targetWidth + '%'; ui.mainZone.style.backgroundColor = '#3498db'; ui.mainZone.style.display = 'block'; aoeHitCount = 0; } 
+            else if (type === 'issen') { ui.qteCursor.style.left = '50%'; } 
             else if (type === 'moonCombo') { qteSpeed = 1.2; targetStart = 65; targetWidth = 25; perfectStart = -1; perfectEnd = -1; ui.mainZone.style.left = targetStart + '%'; ui.mainZone.style.width = targetWidth + '%'; ui.mainZone.style.backgroundColor = '#2ecc71'; ui.mainZone.style.display = 'block'; } 
             else if (type === 'moonHold') { targetStart = 70; targetWidth = 25; perfectStart = 80; perfectEnd = 88; ui.mainZone.style.left = targetStart + '%'; ui.mainZone.style.width = targetWidth + '%'; ui.mainZone.style.backgroundColor = '#2ecc71'; ui.mainZone.style.display = 'block'; ui.perfectZone.style.left = perfectStart + '%'; ui.perfectZone.style.width = (perfectEnd - perfectStart) + '%'; ui.perfectZone.style.backgroundColor = '#f1c40f'; ui.perfectZone.style.display = 'block'; } 
             else if (type === 'defend') { targetStart = 60; targetWidth = 35; ui.mainZone.style.left = targetStart + '%'; ui.mainZone.style.width = targetWidth + '%'; ui.mainZone.style.backgroundColor = '#3498db'; ui.mainZone.style.display = 'block'; if (player.counterStance) { perfectStart = 72; perfectEnd = 82; ui.perfectZone.style.left = perfectStart + '%'; ui.perfectZone.style.width = '10%'; ui.perfectZone.style.backgroundColor = '#ff4757'; } else { perfectStart = 75; perfectEnd = 81; ui.perfectZone.style.left = perfectStart + '%'; ui.perfectZone.style.width = '6%'; ui.perfectZone.style.backgroundColor = '#f1c40f'; } ui.perfectZone.style.display = 'block'; } 
@@ -494,12 +450,27 @@
             if (qteReq) cancelAnimationFrame(qteReq); 
             isQteActive = true; 
             
-            // 星屑斬專用多游標初始化
+            if (pendingAction === 'issen') {
+                issenSuccess = false; issenState = 'waiting'; ui.qteCursor.style.left = '50%';
+                let waitTime = Math.random() * 2000 + 1000; 
+                issenTimeout = setTimeout(() => {
+                    if(!isQteActive) return;
+                    issenState = 'active'; ui.mainZone.style.display = 'block'; ui.mainZone.style.left = '45%'; ui.mainZone.style.width = '10%'; ui.mainZone.style.backgroundColor = '#e74c3c';
+                    issenReactionTimeout = setTimeout(() => {
+                        if(!isQteActive) return;
+                        issenState = 'done'; isQteActive = false; ui.mainZone.style.display = 'none'; checkQteResult(); 
+                    }, 500); 
+                }, waitTime);
+                return; 
+            }
+            
             if (pendingAction === 'safeSlash') {
-                multiCursorPos = [0, -25, -50]; // 三條線彼此間隔 25%
-                multiCursorActive = [true, true, true];
-                currentCursorTarget = 0; // 當前等待玩家點擊的游標
-                ui.qteCursor.style.left = '0%'; document.getElementById('qte-cursor-2').style.left = '-25%'; document.getElementById('qte-cursor-3').style.left = '-50%';
+                // 【變更】：三條游標之間的「距離」改為隨機，造成每次連擊節奏都不同
+                let gap1 = 20 + Math.random() * 15; // 距離第一條線 20%~35%
+                let gap2 = gap1 + 20 + Math.random() * 15; // 距離第二條線再加 20%~35%
+                multiCursorPos = [0, -gap1, -gap2]; 
+                multiCursorActive = [true, true, true]; currentCursorTarget = 0; 
+                ui.qteCursor.style.left = '0%'; document.getElementById('qte-cursor-2').style.left = -gap1 + '%'; document.getElementById('qte-cursor-3').style.left = -gap2 + '%';
                 document.getElementById('qte-cursor-2').style.display = 'block'; document.getElementById('qte-cursor-3').style.display = 'block';
             } else {
                 cursorPosition = 0; cursorDirection = 1; ui.qteCursor.style.left = cursorPosition + '%';
@@ -514,24 +485,19 @@
                 if (qteType === 'fakeout' && !fakeoutTriggered && cursorPosition >= 45 && cursorDirection === 1) { fakeoutTriggered = true; cancelAnimationFrame(qteReq); setTimeout(() => { qteSpeed = 3.5; lastTime = 0; if (isQteActive) qteReq = requestAnimationFrame(moveCursor); }, 500); return; }
                 
                 if (pendingAction === 'safeSlash') {
-                    // 星屑斬三線推進邏輯
                     let allDone = true;
                     for (let i = 0; i < 3; i++) {
                         if (multiCursorActive[i]) {
                             multiCursorPos[i] += (qteSpeed * timeMultiplier);
                             let cElem = i === 0 ? ui.qteCursor : document.getElementById(`qte-cursor-${i+1}`);
                             if (multiCursorPos[i] >= 0) cElem.style.left = multiCursorPos[i] + '%';
-                            
                             if (multiCursorPos[i] >= 100) {
                                 multiCursorActive[i] = false; cElem.style.display = 'none'; playSound('miss');
                                 if (currentCursorTarget === i) currentCursorTarget++;
-                            } else {
-                                allDone = false; // 只要還有線在場上，動畫就繼續
-                            }
+                            } else { allDone = false; }
                         }
                     }
-                    if (allDone) { isQteActive = false; checkQteResult(); } 
-                    else { qteReq = requestAnimationFrame(moveCursor); }
+                    if (allDone) { isQteActive = false; checkQteResult(); } else { qteReq = requestAnimationFrame(moveCursor); }
                 }
                 else if (pendingAction === 'moonHold') {
                     cursorPosition += (qteSpeed * timeMultiplier * cursorDirection); if (cursorPosition >= 100) { cursorPosition = 100; cursorDirection = -1; } else if (cursorPosition <= 0) { cursorPosition = 0; cursorDirection = 1; } ui.qteCursor.style.left = cursorPosition + '%'; qteReq = requestAnimationFrame(moveCursor);
@@ -550,22 +516,26 @@
         function checkQte() { 
             if (!isQteActive) return; 
             
+            if (pendingAction === 'issen') {
+                if (issenState === 'active') {
+                    issenSuccess = true; clearTimeout(issenReactionTimeout); isQteActive = false; issenState = 'done';
+                    ui.mainZone.style.backgroundColor = '#f1c40f'; setTimeout(() => { checkQteResult(); }, 200);
+                } else if (issenState === 'waiting') {
+                    issenSuccess = false; clearTimeout(issenTimeout); isQteActive = false; issenState = 'done';
+                    ui.msgBox.innerText = `太早拔刀了！破綻百出！`; playSound('miss'); setTimeout(() => { checkQteResult(); }, 1000);
+                }
+                return;
+            }
+            
             if (pendingAction === 'safeSlash') {
-                // 星屑斬點擊判定
                 if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
                     let pos = multiCursorPos[currentCursorTarget];
                     if (pos >= targetStart && pos <= targetStart + targetWidth) {
-                        playSound('hit'); aoeHitCount++;
-                        ui.mainZone.style.backgroundColor = '#f1c40f'; // 閃黃光
-                        setTimeout(() => { ui.mainZone.style.backgroundColor = '#3498db'; }, 100);
-                    } else {
-                        playSound('miss');
-                    }
+                        playSound('hit'); aoeHitCount++; ui.mainZone.style.backgroundColor = '#f1c40f'; setTimeout(() => { ui.mainZone.style.backgroundColor = '#3498db'; }, 100);
+                    } else { playSound('miss'); }
                     multiCursorActive[currentCursorTarget] = false;
                     let cElem = currentCursorTarget === 0 ? ui.qteCursor : document.getElementById(`qte-cursor-${currentCursorTarget+1}`);
-                    cElem.style.display = 'none'; // 點擊後該線消失
-                    currentCursorTarget++;
-                    
+                    cElem.style.display = 'none'; currentCursorTarget++;
                     if (currentCursorTarget >= 3) { isQteActive = false; cancelAnimationFrame(qteReq); checkQteResult(); }
                 }
             }
@@ -632,7 +602,7 @@
         }
 
         function checkQteResult() {
-            ui.qteArea.style.display = 'none'; 
+            ui.qteArea.style.display = 'none'; ui.mainZone.style.display = 'none';
             if (pendingAction === "attack") {
                 let isSuccess = (cursorPosition >= targetStart && cursorPosition <= targetStart + targetWidth); let target = enemies[currentTargetIndex];
                 if (target.shield) { playSound('guard'); ui.msgBox.innerText = `攻擊被彈開！${target.name} 有護盾保護。`; setTimeout(checkWinCondition, 2000); return; }
@@ -640,44 +610,24 @@
                 ui.msgBox.innerText = isSuccess ? `會心一擊！對 ${target.name} 造成 ${dmg} 點傷害。` : `普通攻擊。對 ${target.name} 造成 ${dmg} 點傷害。`;
                 applyDamageToTarget(target, dmg);
             } 
-                       else if (pendingAction === "safeSlash") {
-                let target = enemies[currentTargetIndex];
-                let dmg = 0;
-
-                // 【新增】：如果敵人有護盾時的特殊破盾結算
+            else if (pendingAction === "safeSlash") {
+                let target = enemies[currentTargetIndex]; let dmg = 0;
                 if (target.shield) { 
-                    if (aoeHitCount === 3) { 
-                        // 三段全中：完美破盾且造成全額傷害
-                        target.shield = false; updateEnemyStatus(target);
-                        dmg = 9; playSound('skill'); 
-                        ui.msgBox.innerText = `✨ 完美星屑斬！連續的劍光硬生生切碎了護盾！\n對 ${target.name} 造成 ${dmg} 點傷害。`; 
-                    }
-                    else if (aoeHitCount > 0) { 
-                        // 只中 1~2 段：勉強破盾，但傷害被護盾大幅抵銷 (1段=1傷, 2段=2傷)
-                        target.shield = false; updateEnemyStatus(target);
-                        dmg = aoeHitCount * 1; playSound('hit'); 
-                        ui.msgBox.innerText = `星屑斬勉強擊碎了護盾！(傷害被抵銷)\n對 ${target.name} 造成 ${dmg} 點微弱傷害。`; 
-                    }
-                    else { 
-                        // 全部揮空：被護盾彈開
-                        playSound('guard'); ui.msgBox.innerText = `攻擊完全被彈開！\n${player.name} 的攻擊沒有抓到節奏。`; 
-                        setTimeout(checkWinCondition, 1500); return; 
-                    }
+                    if (aoeHitCount === 3) { target.shield = false; updateEnemyStatus(target); dmg = 9; playSound('skill'); ui.msgBox.innerText = `✨ 完美星屑斬！連續的劍光硬生生切碎了護盾！\n對 ${target.name} 造成 ${dmg} 點傷害。`; }
+                    else if (aoeHitCount > 0) { target.shield = false; updateEnemyStatus(target); dmg = aoeHitCount * 1; playSound('hit'); ui.msgBox.innerText = `星屑斬勉強擊碎了護盾！(傷害被抵銷)\n對 ${target.name} 造成 ${dmg} 點微弱傷害。`; }
+                    else { playSound('guard'); ui.msgBox.innerText = `攻擊完全被彈開！\n${player.name} 的攻擊沒有抓到節奏。`; setTimeout(checkWinCondition, 1500); return; }
                 } 
-                // 敵人沒有護盾時的正常結算
                 else {
                     if (aoeHitCount === 3) { dmg = 9; playSound('skill'); ui.msgBox.innerText = `✨ 完美星屑斬！全段命中觸發暴擊！\n對 ${target.name} 造成 ${dmg} 點傷害。`; }
                     else if (aoeHitCount > 0) { dmg = aoeHitCount * 3; playSound('hit'); ui.msgBox.innerText = `星屑斬！(${aoeHitCount} 段命中)\n對 ${target.name} 造成 ${dmg} 點傷害。`; }
                     else { playSound('miss'); ui.msgBox.innerText = `揮空了... ${player.name} 的攻擊沒有抓到節奏。`; setTimeout(checkWinCondition, 1500); return; }
                 }
-                
                 applyDamageToTarget(target, dmg);
             }
-
             else if (pendingAction === "issen") {
-                let isSuccess = (cursorPosition >= targetStart && cursorPosition <= targetStart + targetWidth); let target = enemies[currentTargetIndex];
-                if (isSuccess) { playSound('skill'); let dmg = 10; if(target.shield) { target.shield = false; updateEnemyStatus(target); ui.msgBox.innerText = `⚡ 燕返一閃！切裂了護盾！\n對 ${target.name} 造成 ${dmg} 點致命傷害。`; } else { ui.msgBox.innerText = `⚡ 燕返一閃！\n對 ${target.name} 造成 ${dmg} 點致命傷害。`; } applyDamageToTarget(target, dmg); } 
-                else { playSound('miss'); ui.msgBox.innerText = `揮空了... ${player.name} 的一閃沒有擊中目標。`; setTimeout(checkWinCondition, 1500); }
+                let target = enemies[currentTargetIndex];
+                if (issenSuccess) { playSound('skill'); let dmg = 10; if(target.shield) { target.shield = false; updateEnemyStatus(target); ui.msgBox.innerText = `⚡ 燕返一閃！切裂了護盾！\n對 ${target.name} 造成 ${dmg} 點致命傷害。`; } else { ui.msgBox.innerText = `⚡ 燕返一閃！\n對 ${target.name} 造成 ${dmg} 點致命傷害。`; } applyDamageToTarget(target, dmg); } 
+                else { if (issenState !== 'waiting') { playSound('miss'); ui.msgBox.innerText = `揮空了... ${player.name} 的一閃沒有擊中目標。`; } setTimeout(checkWinCondition, 1500); }
             }
             else if (pendingAction === "aoe_bredeia") {
                 let dmg = aoeBaseAttack + (aoeHitCount * 2); let finalMsg = `✨星空爆發！(Combo: ${aoeHitCount})\n`; playSound('skill');
@@ -771,4 +721,4 @@
     </script>
 </body>
 </html>
-
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        >>us: 10px; padding: 10px; width: 130px; background-color: #3a3a3a; transition: all 0.5s ease; transform-origin: center; }>                                                                                                                                                                                      .story-btn.disabled { background-color: #555; color: #888; border-color: #777; cursor: not-allowed; }>us: 10px; padding: 10px; width: 130px; background-color: #3a3a3a; transition: all 0.5s ease; transform-origin: center; }>>us: 10px; padding: 10px; width: 130px; background-color: #3a3a3a; transition: all 0.5s ease; transform-origin: center; }>                                                                                                                                                                                      .story-btn.disabled { background-color: #555; color: #888; border-color: #777; cursor: not-allowed; }>us: 10px; padding: 10px; width: 130px; background-color: #3a3a3a; transition: all 0.5s ease; trans>
