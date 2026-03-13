@@ -236,31 +236,8 @@
         const sfx = { hit: new Audio('hit.mp3'), miss: new Audio('miss.mp3'), guard: new Audio('guard.mp3'), skill: new Audio('skill.mp3'), heal: new Audio('heal.mp3'), click: new Audio('click.mp3'), cancel: new Audio('cancel.mp3') };
         function playSound(type) { if(sfx[type]) { sfx[type].currentTime = 0; sfx[type].play().catch(e => {}); } }
 
-<<<<<<< HEAD
         // ==========================================
         // 📖 動態劇本資料庫系統 (已修復完整版)
-=======
-
-
-        function getChapter1_Part1() { return [
-            { speaker: "", text: "（滴答……滴答……）\n意識沉入深海，一段模糊的過往在夢境中浮現。", bg: "#4b3832" }, 
-            { speaker: "？？？", text: "「████，你看！那裡有兔兔！」", bg: "#4b3832" },
-            { speaker: "", text: "在孤兒院偏僻的廢棄物堆積處，一位關係要好的朋友拉著他的手，興奮地指著角落。", bg: "#4b3832" },
-            { speaker: "鈴仙凪人", text: "（……不行，這個社會可不是什麼溫馨的童話。）\n（如果讓牠們繼續留在這裡，被大人發現的話，一定會遭遇不測的。）", bg: "#4b3832" },
-            { speaker: "", text: "年幼的他深知現實的殘酷。為了保護牠們，他沉下臉，打算狠下心將這對兔子驅逐出孤兒院。", bg: "#4b3832" },
-            { speaker: "鈴仙凪人", text: "「走開！別留在這裡！」", bg: "#4b3832" },
-            { speaker: "", text: "然而，當他轉頭看見朋友那瞬間黯淡下來、充滿悲傷的表情時，他剛抬起的手還是僵住了。", bg: "#4b3832" },
-            { speaker: "鈴仙凪人", text: "「……隨便你。要是發生什麼事，我可不管。」", bg: "#4b3832" },
-            { speaker: "", text: "（夢境的畫面逐漸破碎、消散……）", bg: "#1a1a2e" },
-            { speaker: "", text: "鈴仙凪人緩緩睜開眼睛。", bg: "#3e2723" }, 
-            { speaker: "鈴仙凪人", text: "「好重……」\n（他無奈地看著正趴在自己胸口上呼呼大睡的「鈴仙月兔」，嘆了口氣。）", bg: "#3e2723" },
-            { speaker: "", text: "片刻後，一人一兔來到了布蕾蒂雅的面前。", bg: "#3e2723" },
-            { speaker: "布蕾蒂雅", text: "「出發之前，我得給你個忠告。」", bg: "#3e2723" },
-            { speaker: "布蕾蒂雅", text: "「你要去的地方，是一個被『永夜』籠罩的城市。\n在那裡，『自由』與『白晝』是極其陌生的詞彙。」", bg: "#3e2723" },
-            { speaker: "布蕾蒂雅", text: "「鈴仙凪人，可千萬不要迷失了。\n當雙方同時向你伸出橄欖枝時，只要做出你心中認為正確的選擇就好。」", bg: "#3e2723" },
-            { speak        // ==========================================
-        // 📖 動態劇本資料庫系統
->>>>>>> 001bf44c6cda77188d88c736619e83d6c430beba
         // ==========================================
         function getPart1() {
             return [
@@ -319,7 +296,6 @@
             else if (bossDefeated === 'dummy') { reviewLine = "乾脆俐落。看來你已經完全準備好了。"; }
             else { reviewLine = "沒想到你居然能活著回來。"; } // Fallback
 
-<<<<<<< HEAD
             return [
                 { speaker: "布蕾蒂雅", text: reviewLine, bg: "#0a0a2a" },
                 { speaker: "布蕾蒂雅", text: "既然暖身完畢，那就可以正式開始你的第一次旅途了。", bg: "#0a0a2a" },
@@ -356,45 +332,6 @@
             ];
         }
 
-=======
-            return [
-                { speaker: "布蕾蒂雅", text: reviewLine, bg: "#0a0a2a" },
-                { speaker: "布蕾蒂雅", text: "既然暖身完畢，那就可以正式開始你的第一次旅途了。", bg: "#0a0a2a" },
-                { speaker: "鈴仙凪人", text: "喂，等等，我本人什麼話都還沒說啊！", bg: "#0a0a2a" },
-                { speaker: "布蕾蒂雅", text: "誰理你。", bg: "#0a0a2a" },
-                { speaker: "", text: "（布蕾蒂雅完全無視凪人的抗議，直接一腳將他踹進了星之門）", bg: "#000" },
-                { speaker: "布蕾蒂雅", text: "希望你的第一次旅途一切順利……不過，大概是不會太順利啦。", bg: "#000" },
-                
-                // 雪地場景
-                { speaker: "鈴仙凪人", text: "咳……咳咳！可惡，那個叫布蕾蒂雅的傢伙，居然直接把我踹進來……這到底是什麼鬼地方？", bg: "#e0e6ed", textColor: "#2c3e50" },
-                { speaker: "", text: "四周白茫茫的一片，狂風夾雜著暴雪，氣溫低得彷彿連血液都要凍結。", bg: "#e0e6ed", textColor: "#2c3e50" },
-                { speaker: "鈴仙凪人", text: "（不行……失溫太嚴重了……感覺隨時都會倒下……）", bg: "#e0e6ed", textColor: "#2c3e50" },
-                { speaker: "", text: "不出一會兒，凪人的體力便到達極限，倒在了軟綿綿的積雪中。", bg: "#e0e6ed", textColor: "#2c3e50" },
-                { speaker: "", text: "在他意識即將徹底陷入黑暗的最後一刻——\n（叮鈴……叮鈴……）", bg: "#e0e6ed", textColor: "#2c3e50" },
-                { speaker: "", text: "他隱約聽見了，某種清脆的鈴鐺聲正在朝他緩緩靠近。\n隨後，鈴仙凪人徹底失去了意識。", bg: "#000", textColor: "#fff" },
-                
-                // 圖書館場景
-                { speaker: "", text: "（溫暖的觸感包裹著身體，耳邊傳來劈啪作響的柴火聲。）", bg: "#3e2723" },
-                { speaker: "", text: "再次睜開眼時，凪人發現自己回到了彼岸的圖書館。他正舒服地躺在沙發上，享受著壁爐帶來的溫度。", bg: "#3e2723" },
-                { speaker: "布蕾蒂雅", text: "喲，醒來啦？", bg: "#3e2723" },
-                { speaker: "鈴仙凪人", text: "喂喂喂！把我一腳踹進那個會冷死人的鬼地方，妳就沒有什麼別的話想說嗎！？", bg: "#3e2723" },
-                { speaker: "布蕾蒂雅", text: "哎呀，這可不能怪我。我怎麼會知道星之門會把你傳送到那種極端環境？", bg: "#3e2723" },
-                { speaker: "鈴仙凪人", text: "何意味？妳在耍我嗎？", bg: "#3e2723" },
-                { speaker: "布蕾蒂雅", text: "解釋起來很麻煩啦……不過我保證，下次『絕對』不會再發生這種情況了。", bg: "#3e2723" },
-                { speaker: "布蕾蒂雅", text: "撇開這個不談，這隻兔子是你帶回來的特產嗎？", bg: "#3e2723" },
-                { speaker: "", text: "布蕾蒂雅單手拎起一隻毛茸茸的白兔。那隻兔子似乎對這種粗魯的抓法非常反感，正拼命地蹬著短腿四處掙扎。", bg: "#3e2723" },
-                { speaker: "鈴仙凪人", text: "兔子？哪來的？", bg: "#3e2723" },
-                { speaker: "布蕾蒂雅", text: "從你剛剛差點凍死的那個世界，跟著你一起帶回來的啊。", bg: "#3e2723" },
-                { speaker: "布蕾蒂雅", text: "既然你們兩個相遇即是緣分，要不……你來給牠取個名字？", bg: "#3e2723" },
-                { speaker: "鈴仙凪人", text: "我看妳純粹是懶得動腦想名字，才丟給我的吧？\n隨便啦，那就叫……「鈴月仙兔」好了。", bg: "#3e2723" },
-                { speaker: "布蕾蒂雅", text: "超爛。完全沒有品味。\n不如叫「鈴仙月兔」吧，聽起來順口多了。", bg: "#3e2723" },
-                { speaker: "", text: "於是，這隻名為鈴仙月兔的奇妙生物，「算是」正式成為了他們的夥伴。", bg: "#3e2723" },
-                { speaker: "", text: "【序章：星空彼方的約定 —— 完】\n(點擊螢幕返回主選單)", bg: "#1a1a2e" }
-            ];
-        }
-
-        // --- 處理第一章的劇情 ---
->>>>>>> 001bf44c6cda77188d88c736619e83d6c430beba
         function getChapter1_Part1() { return [
             { speaker: "", text: "（滴答……滴答……）\n意識沉入深海，一段模糊的過往在夢境中浮現。", bg: "#4b3832" }, 
             { speaker: "？？？", text: "「████，你看！那裡有兔兔！」", bg: "#4b3832" },
@@ -441,63 +378,8 @@
         let currentStoryIndex = 0; let isTyping = false; let typeTimer; let fullText = "";
 
         // ==========================================
-<<<<<<< HEAD
         // 【核心變數與函數區（之前被誤刪的就在這）】
         // ==========================================
-=======
-
-        // --- 劇情切換邏輯修復 ---
-        function loadChapter(chapterNum) {
-            playSound('click'); isStoryMode = true; selectedChar = 'nagito'; 
-            if (chapterNum === 1) { storyScript = getPart1(); } 
-            else if (chapterNum === 2) { storyScript = getPart2(); } 
-            else if (chapterNum === 3) { storyScript = getPart3('dummy'); } 
-            else if (chapterNum === 4) { storyScript = getChapter1_Part1(); }
-            else if (chapterNum === 5) { storyScript = getChapter1_Part2(); } 
-            
-            baseStoryLength = storyScript.length; currentStoryIndex = 0; showScreen('screen-story'); renderStoryLine();
-        }
-
-        function resumeStoryAfterBattle() {
-            if (selectedBoss === 'cleaner') {
-                showScreen('screen-menu'); return; 
-            } else {
-                storyScript = getPart3(selectedBoss); baseStoryLength = storyScript.length;
-                currentStoryIndex = 0; showScreen('screen-story'); renderStoryLine();
-            }
-        }
-er: "", text: "還沒等凪人反應過來，布蕾蒂雅已經毫不客氣地抬起腳，再次將他連人帶兔踹進了深邃的星之門裡。", bg: "#000" },
-            { speaker: "", text: "（經過一陣天旋地轉，凪人與月兔重重地摔在了冰冷的地面上。）", bg: "#1c1c1c" },
-            { speaker: "鈴仙凪人", text: "「痛... 這是哪裡？」", bg: "#1c1c1c" },
-            { speaker: "", text: "映入眼簾的是一片荒蕪的廢墟。天空中沒有星光，只有無盡的漆黑。\n路邊殘破的路燈正發出『滋滋』的微弱電流聲，勉強照亮了周圍。", bg: "#1c1c1c" },
-            { speaker: "鈴仙月兔", text: "「啾啾！」\n（月兔抖了抖身上的灰塵，好奇地東張西望。）", bg: "#1c1c1c" },
-            { speaker: "鈴仙凪人", text: "「那個塔樓... 也許我們該往那裡走。」", bg: "#1c1c1c" },
-            { speaker: "", text: "正當他們準備動身時，前方的陰影處傳來了沉重的金屬摩擦聲。\n一台破舊不堪的戰鬥型機器人緩緩駛出。", bg: "#1c1c1c" },
-            { speaker: "鈴仙凪人", text: "「那是... 戰鬥型機器人？看來就算變成了廢鐵，也沒有忘記自己『清掃者』的本分啊...」", bg: "#1c1c1c" },
-            { speaker: "", text: "「喀啦。」\n凪人不小心踩碎了一塊鬆動的碎石，清脆的聲音在寂靜的廢墟中被無限放大。", bg: "#1c1c1c", textColor: "#ff6b6b" },
-            { speaker: "清掃者", text: "【警告：偵測到未註冊生命體。開始執行清除程序。】", bg: "#300" },
-            { speaker: "系統", text: "【突發事件：清掃者的追擊！】\n準備進行連續 10 次的極限迴避！", bg: "#000", action: "run_minigame" }
-        ];}
-
-        function getChapter1_Part2() { return [
-            { speaker: "鈴仙凪人", text: "「呼……呼……等等，後面的引擎聲怎麼還沒消失！？」", bg: "#1c1c1c" },
-            { speaker: "", text: "即便凪人已經拼盡全力閃避，但清掃者如同附骨之蛆，依然緊緊跟在他們身後，機槍管的紅光越發刺眼。", bg: "#1c1c1c" },
-            { speaker: "鈴仙凪人", text: "「這樣逃下去根本就不是辦法，鈴仙月兔，我們得讓它停下來。」", bg: "#1c1c1c" },
-            { speaker: "鈴仙月兔", text: "「啾啾！」\n（月兔從凪人懷裡跳了出來，擺出了戰鬥的架勢。）", bg: "#1c1c1c" },
-            { speaker: "系統", text: "無路可退！請選擇迎戰的對象：", bg: "#1a1a2e",
-              choices: [
-                  { text: "鈴仙凪人 (拔刀迎擊)", valid: true, boss: "cleaner", char: "nagito" },
-                  { text: "鈴仙月兔 (飛踢出擊)", valid: true, boss: "cleaner", char: "tsukito" }
-              ]
-            }
-        ];}
-
-        let storyScript = []; let baseStoryLength = 0;
-        let currentStoryIndex = 0; let isTyping = false; let typeTimer; let fullText = "";
-
-        // ==========================================
-
->>>>>>> 001bf44c6cda77188d88c736619e83d6c430beba
         let selectedChar = ""; let selectedBoss = ""; let isStoryMode = false;
         const charData = { bredeia: { name: "布蕾蒂雅", hp: 20, sp: 20 }, nagito: { name: "鈴仙凪人", hp: 25, sp: 20 }, tsukito: { name: "鈴仙月兔", hp: 20, sp: 20 } };
         let player = {}; let enemies = [];
@@ -1258,10 +1140,4 @@ if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
         }
     </script>
 </body>
-<<<<<<< HEAD
-</html>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <div class="qte-bar" style="width: 90%; max-width: 450px;">
-
-=======
 </html>
-
->>>>>>> 001bf44c6cda77188d88c736619e83d6c430beba
