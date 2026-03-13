@@ -640,15 +640,40 @@
                 ui.msgBox.innerText = isSuccess ? `會心一擊！對 ${target.name} 造成 ${dmg} 點傷害。` : `普通攻擊。對 ${target.name} 造成 ${dmg} 點傷害。`;
                 applyDamageToTarget(target, dmg);
             } 
-            else if (pendingAction === "safeSlash") {
+                       else if (pendingAction === "safeSlash") {
                 let target = enemies[currentTargetIndex];
-                if (target.shield) { playSound('guard'); ui.msgBox.innerText = `攻擊被彈開！${target.name} 的護盾擋下了星屑斬。`; setTimeout(checkWinCondition, 2000); return; }
                 let dmg = 0;
-                if (aoeHitCount === 3) { dmg = 9; playSound('skill'); ui.msgBox.innerText = `✨ 完美星屑斬！全段命中觸發暴擊！\n對 ${target.name} 造成 ${dmg} 點傷害。`; }
-                else if (aoeHitCount > 0) { dmg = aoeHitCount * 3; ui.msgBox.innerText = `星屑斬！(${aoeHitCount} 段命中)\n對 ${target.name} 造成 ${dmg} 點傷害。`; }
-                else { ui.msgBox.innerText = `揮空了... ${player.name} 的攻擊沒有抓到節奏。`; setTimeout(checkWinCondition, 1500); return; }
+
+                // 【新增】：如果敵人有護盾時的特殊破盾結算
+                if (target.shield) { 
+                    if (aoeHitCount === 3) { 
+                        // 三段全中：完美破盾且造成全額傷害
+                        target.shield = false; updateEnemyStatus(target);
+                        dmg = 9; playSound('skill'); 
+                        ui.msgBox.innerText = `✨ 完美星屑斬！連續的劍光硬生生切碎了護盾！\n對 ${target.name} 造成 ${dmg} 點傷害。`; 
+                    }
+                    else if (aoeHitCount > 0) { 
+                        // 只中 1~2 段：勉強破盾，但傷害被護盾大幅抵銷 (1段=1傷, 2段=2傷)
+                        target.shield = false; updateEnemyStatus(target);
+                        dmg = aoeHitCount * 1; playSound('hit'); 
+                        ui.msgBox.innerText = `星屑斬勉強擊碎了護盾！(傷害被抵銷)\n對 ${target.name} 造成 ${dmg} 點微弱傷害。`; 
+                    }
+                    else { 
+                        // 全部揮空：被護盾彈開
+                        playSound('guard'); ui.msgBox.innerText = `攻擊完全被彈開！\n${player.name} 的攻擊沒有抓到節奏。`; 
+                        setTimeout(checkWinCondition, 1500); return; 
+                    }
+                } 
+                // 敵人沒有護盾時的正常結算
+                else {
+                    if (aoeHitCount === 3) { dmg = 9; playSound('skill'); ui.msgBox.innerText = `✨ 完美星屑斬！全段命中觸發暴擊！\n對 ${target.name} 造成 ${dmg} 點傷害。`; }
+                    else if (aoeHitCount > 0) { dmg = aoeHitCount * 3; playSound('hit'); ui.msgBox.innerText = `星屑斬！(${aoeHitCount} 段命中)\n對 ${target.name} 造成 ${dmg} 點傷害。`; }
+                    else { playSound('miss'); ui.msgBox.innerText = `揮空了... ${player.name} 的攻擊沒有抓到節奏。`; setTimeout(checkWinCondition, 1500); return; }
+                }
+                
                 applyDamageToTarget(target, dmg);
             }
+
             else if (pendingAction === "issen") {
                 let isSuccess = (cursorPosition >= targetStart && cursorPosition <= targetStart + targetWidth); let target = enemies[currentTargetIndex];
                 if (isSuccess) { playSound('skill'); let dmg = 10; if(target.shield) { target.shield = false; updateEnemyStatus(target); ui.msgBox.innerText = `⚡ 燕返一閃！切裂了護盾！\n對 ${target.name} 造成 ${dmg} 點致命傷害。`; } else { ui.msgBox.innerText = `⚡ 燕返一閃！\n對 ${target.name} 造成 ${dmg} 點致命傷害。`; } applyDamageToTarget(target, dmg); } 
