@@ -237,7 +237,7 @@
         function playSound(type) { if(sfx[type]) { sfx[type].currentTime = 0; sfx[type].play().catch(e => {}); } }
 
         // ==========================================
-        // 📖 動態劇本資料庫系統 (已修復完整版)
+        // 📖 動態劇本資料庫系統 (加入無縫跳轉)
         // ==========================================
         function getPart1() {
             return [
@@ -276,7 +276,9 @@
                 { speaker: "鈴仙凪人", text: "做這種事……有什麼特別的意義嗎？", bg: "#0a0a2a" },
                 { speaker: "布蕾蒂雅", text: "誰知道呢？但至少……你未來的人生經歷會變得非常豐富喔。", bg: "#0a0a2a" },
                 { speaker: "鈴仙凪人", text: "喔。", bg: "#0a0a2a" },
-                { speaker: "布蕾蒂雅", text: "雖然我很想立刻讓你開始身為紀錄者的旅行，但看在你剛經歷那起事件的份上，我建議你先好好休息吧。", bg: "#0a0a2a" }
+                { speaker: "布蕾蒂雅", text: "雖然我很想立刻讓你開始身為紀錄者的旅行，但看在你剛經歷那起事件的份上，我建議你先好好休息吧。", bg: "#0a0a2a" },
+                // 【加入無縫跳轉機制】：自動接續第二幕
+                { speaker: "", text: "（休息片刻後...）", bg: "#000", textColor: "#aaa", nextChapter: 2 }
             ];
         }
 
@@ -378,8 +380,6 @@
         let currentStoryIndex = 0; let isTyping = false; let typeTimer; let fullText = "";
 
         // ==========================================
-        // 【核心變數與函數區（之前被誤刪的就在這）】
-        // ==========================================
         let selectedChar = ""; let selectedBoss = ""; let isStoryMode = false;
         const charData = { bredeia: { name: "布蕾蒂雅", hp: 20, sp: 20 }, nagito: { name: "鈴仙凪人", hp: 25, sp: 20 }, tsukito: { name: "鈴仙月兔", hp: 20, sp: 20 } };
         let player = {}; let enemies = [];
@@ -447,6 +447,9 @@
             
             let line = storyScript[currentStoryIndex];
             if (line.action === 'run_minigame') { changeBGM('cleaner'); startRunMinigame(); return; }
+
+            // 【加入無縫跳轉判定】：如果這段台詞有指定跳轉章節，就直接載入該章節！
+            if (line.nextChapter) { loadChapter(line.nextChapter); return; }
 
             document.getElementById('screen-story').style.backgroundColor = line.bg;
             document.getElementById('story-speaker').innerText = line.speaker ? `【${line.speaker}】` : "";
