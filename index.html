@@ -32,7 +32,6 @@
         .ui-panel { border: 2px solid #aaa; padding: 15px; width: 90%; max-width: 450px; margin: 0 auto; border-radius: 10px; background-color: #1e1e1e; min-height: 160px; }
         #message-box { font-size: 15px; margin-bottom: 15px; color: #feca57; min-height: 40px; white-space: pre-line; }
         
-        /* 魔改按鈕：徹底封鎖手機的長按選取與右鍵選單 */
         button { 
             padding: 8px 12px; font-size: 15px; cursor: pointer; border-radius: 5px; border: none; font-weight: bold; margin: 4px; outline: none; 
             -webkit-tap-highlight-color: transparent; 
@@ -63,8 +62,6 @@
         
         #action-btn, #hold-btn { background-color: #ff9f43; color: #fff; transform: scale(1.1); padding: 12px 30px; font-size: 18px; display: inline-block;}
         #action-btn:active { transform: scale(0.9); }
-        
-        /* 強制加上 touch-action: none 讓蓄力按鈕完全無視螢幕滾動指令 */
         #hold-btn { touch-action: none; }
         #hold-btn:active { transform: scale(0.95); box-shadow: 0 0 15px #f39c12; }
     </style>
@@ -141,7 +138,6 @@
                     <div class="qte-cursor" id="qte-cursor"></div>
                 </div>
                 <button id="action-btn" onpointerdown="checkQte()">動作！</button>
-                
                 <button id="hold-btn" 
                         onpointerdown="startHoldQte(event)" 
                         onpointerup="endHoldQte(event)" 
@@ -159,6 +155,14 @@
     </div>
 
     <script>
+        // ==========================================
+        // 🎵 背景音樂引擎 (直接讀取超長檔名)
+        // ==========================================
+        const bgm = new Audio('Snow Sisters [UNI2 Mix] (Vatista Theme) - UNDER NIGHT IN-BIRTH II SysCeles - - 来兎 Reito.mp3');
+        bgm.loop = true;
+        bgm.volume = 0.5; // 音量 50%
+        // ==========================================
+
         let selectedChar = "";
         let selectedBoss = "";
         
@@ -208,7 +212,11 @@
         }
 
         function selectBoss(bossId) {
-            selectedBoss = bossId; startBattle();
+            selectedBoss = bossId; 
+            // 進入戰鬥時開始播放 BGM
+            bgm.currentTime = 0;
+            bgm.play().catch(e => console.log("BGM 播放被阻擋", e));
+            startBattle();
         }
 
         function startBattle() {
@@ -285,7 +293,10 @@
             
             if (itemType === 'potion') { player.hp = Math.min(player.hp + item.healHp, player.maxHp); ui.playerHp.innerText = player.hp; ui.msgBox.innerText = `回復了 ${item.healHp} 點 HP。`; } 
             else if (itemType === 'ether') { player.sp = Math.min(player.sp + item.healSp, player.maxSp); ui.playerSp.innerText = player.sp; ui.msgBox.innerText = `回復了 ${item.healSp} 點 SP。`; } 
-            else if (itemType === 'antidote') { if (player.poisoned || player.blinded) { player.poisoned = false; player.blinded = false; updatePlayerStatus(); ui.msgBox.innerText = `所有異常狀態被淨化了！`; } else { ui.msgBox.innerText = `吃了解毒草，但什麼事也沒發生。`; } }
+            else if (itemType === 'antidote') {
+                if (player.poisoned || player.blinded) { player.poisoned = false; player.blinded = false; updatePlayerStatus(); ui.msgBox.innerText = `所有異常狀態被淨化了！`; } 
+                else { ui.msgBox.innerText = `吃了解毒草，但什麼事也沒發生。`; }
+            }
             setTimeout(startEnemyPhase, 1500); 
         }
 
@@ -370,14 +381,11 @@
             }
         }
 
-        // --- 修正後的觸控防彈邏輯 ---
         function startHoldQte(e) {
-            if (e && e.cancelable) e.preventDefault(); // 阻止手機預設滑動或長按
-            if (e && e.target && e.pointerId) {
-                e.target.setPointerCapture(e.pointerId); // 鎖定觸控，手指滑出去一點點也算按著
-            }
-
+            if (e && e.cancelable) e.preventDefault(); 
+            if (e && e.target && e.pointerId) { e.target.setPointerCapture(e.pointerId); }
             if (isQteActive) return; 
+            
             isHolding = true;
             ui.holdBtn.innerText = "鬆開爆發！";
             ui.holdBtn.style.backgroundColor = "#e74c3c";
@@ -387,10 +395,7 @@
         }
 
         function endHoldQte(e) {
-            // 釋放觸控鎖定
-            if (e && e.target && e.pointerId && e.target.hasPointerCapture && e.target.hasPointerCapture(e.pointerId)) {
-                e.target.releasePointerCapture(e.pointerId);
-            }
+            if (e && e.target && e.pointerId && e.target.hasPointerCapture && e.target.hasPointerCapture(e.pointerId)) { e.target.releasePointerCapture(e.pointerId); }
             if (!isHolding) return;
             isHolding = false; isQteActive = false; cancelAnimationFrame(qteReq); checkHoldResult();
         }
@@ -427,7 +432,7 @@
                             isQteActive = false; endMoonCombo();
                         } else if (qteType === 'multihit' && multiHitCurrent < multiHitMax - 1) {
                             processDefendResult(false, false);
-                            if (player.hp === 0) { isQteActive = false; ui.qteArea.style.display = 'none'; setTimeout(() => { ui.msgBox.innerText = `${player.name} 倒下了... 戰鬥失敗。`; }, 1500); return; }
+                            if (player.hp === 0) { isQteActive = false; ui.qteArea.style.display = 'none'; setTimeout(() => { ui.msgBox.innerText = `${player.name} 倒下了... 戰鬥失敗。`; bgm.pause(); }, 1500); return; }
                             multiHitCurrent++; cursorPosition = 0; ui.msgBox.innerText = `連續攻擊！(第 ${multiHitCurrent + 1} 擊)`; lastTime = 0;
                             qteReq = requestAnimationFrame(moveCursor);
                         } else {
@@ -463,7 +468,7 @@
                 let isSuccess = (cursorPosition >= targetStart && cursorPosition <= targetStart + targetWidth);
                 processDefendResult(isSuccess, isPerfect);
 
-                if (player.hp === 0) { isQteActive = false; cancelAnimationFrame(qteReq); ui.qteArea.style.display = 'none'; setTimeout(() => { ui.msgBox.innerText = `${player.name} 倒下了... 戰鬥失敗。`; }, 1500); return; }
+                if (player.hp === 0) { isQteActive = false; cancelAnimationFrame(qteReq); ui.qteArea.style.display = 'none'; setTimeout(() => { ui.msgBox.innerText = `${player.name} 倒下了... 戰鬥失敗。`; bgm.pause(); }, 1500); return; }
                 if (isPerfect && player.counterStance) { isQteActive = false; cancelAnimationFrame(qteReq); ui.qteArea.style.display = 'none'; setTimeout(() => { activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 2000); }, 1500); return; }
                 
                 if (multiHitCurrent < multiHitMax - 1) { multiHitCurrent++; cursorPosition = 0; ui.msgBox.innerText = `連續攻擊！(第 ${multiHitCurrent + 1} 擊)`; } 
@@ -479,7 +484,9 @@
             let isSuccess = (cursorPosition >= targetStart && cursorPosition <= targetStart + targetWidth);
             
             let dmg = aoeBaseAttack; 
-            if (isPerfect) dmg += 4; else if (isSuccess) dmg += 2; else dmg = 1; 
+            if (isPerfect) { dmg += 4; } 
+            else if (isSuccess) { dmg += 2; } 
+            else { dmg = 1; } 
 
             let finalMsg = isPerfect ? `✨ 完美蓄力！月華爆發！\n` : (isSuccess ? `✨ 月華爆發！\n` : `❌ 蓄力時機錯誤... 軟弱的月光\n`);
             
@@ -555,7 +562,7 @@
                 let isPerfect = (cursorPosition >= perfectStart && cursorPosition <= perfectEnd);
                 let isSuccess = (cursorPosition >= targetStart && cursorPosition <= targetStart + targetWidth);
                 if (qteType === 'multihit') { processDefendResult(false, false); } else { processDefendResult(isSuccess, isPerfect); }
-                if (player.hp === 0) { setTimeout(() => { ui.msgBox.innerText = `${player.name} 倒下了... 戰鬥失敗。`; }, 1500); return; }
+                if (player.hp === 0) { setTimeout(() => { ui.msgBox.innerText = `${player.name} 倒下了... 戰鬥失敗。`; bgm.pause(); }, 1500); return; }
                 let allDead = enemies.every(e => !e.isAlive); if (allDead) { setTimeout(checkWinCondition, 1000); return; }
                 activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 1500);
             }
@@ -581,11 +588,11 @@
 
         function checkWinCondition() {
             let allDead = enemies.every(e => !e.isAlive);
-            if (allDead) { ui.msgBox.innerText = "所有敵人都被打倒了！戰鬥勝利！\n(請重整網頁回到標題)"; } else { startEnemyPhase(); }
+            if (allDead) { ui.msgBox.innerText = "所有敵人都被打倒了！戰鬥勝利！\n(請重整網頁回到標題)"; bgm.pause(); } else { startEnemyPhase(); }
         }
 
         function startEnemyPhase() {
-            if (player.poisoned) { player.hp = Math.max(player.hp - 2, 0); ui.playerHp.innerText = player.hp; ui.msgBox.innerText = `毒性發作... 受到了 2 點毒屬性傷害。`; if (player.hp === 0) { setTimeout(() => { ui.msgBox.innerText = `${player.name} 倒下了... 戰鬥失敗。`; }, 1500); return; } setTimeout(() => { activeEnemyIndex = 0; processEnemyTurnQueue(); }, 1500); } else { activeEnemyIndex = 0; processEnemyTurnQueue(); }
+            if (player.poisoned) { player.hp = Math.max(player.hp - 2, 0); ui.playerHp.innerText = player.hp; ui.msgBox.innerText = `毒性發作... 受到了 2 點毒屬性傷害。`; if (player.hp === 0) { setTimeout(() => { ui.msgBox.innerText = `${player.name} 倒下了... 戰鬥失敗。`; bgm.pause(); }, 1500); return; } setTimeout(() => { activeEnemyIndex = 0; processEnemyTurnQueue(); }, 1500); } else { activeEnemyIndex = 0; processEnemyTurnQueue(); }
         }
 
         function processEnemyTurnQueue() {
@@ -625,4 +632,3 @@
     </script>
 </body>
 </html>
-                                                                                                                 }
