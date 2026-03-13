@@ -5,7 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>QTE 回合制戰鬥 - 星空彼方的約定</title>
     <style>
-        body { background-color: #2b2b2b; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; touch-action: manipulation; }
+        /* 【重要優化】：全局禁用文字選取、長按選單、與瀏覽器預設手勢 */
+        * {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body { 
+            background-color: #2b2b2b; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; 
+            touch-action: none; /* 禁用雙擊放大與滑動回退，防止小遊戲卡頓 */
+            overflow: hidden;
+        }
         
         .screen { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 85vh; width: 100%; }
         .screen.active { display: flex; }
@@ -25,7 +41,7 @@
 
         /* AVG 劇情模式與選項樣式 */
         #screen-story { transition: background-color 0.5s ease; justify-content: flex-end; padding-bottom: 50px; background-color: #1a1a2e; }
-        #story-dialogue-box { background: rgba(0, 0, 0, 0.85); border: 2px solid #aaa; border-radius: 10px; width: 90%; max-width: 500px; padding: 20px; text-align: left; position: relative; min-height: 120px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); cursor: pointer; -webkit-tap-highlight-color: transparent; user-select: none; }
+        #story-dialogue-box { background: rgba(0, 0, 0, 0.85); border: 2px solid #aaa; border-radius: 10px; width: 90%; max-width: 500px; padding: 20px; text-align: left; position: relative; min-height: 120px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); cursor: pointer; }
         #story-speaker { color: #feca57; font-size: 18px; font-weight: bold; margin-bottom: 10px; min-height: 24px;}
         #story-text { font-size: 17px; line-height: 1.6; white-space: pre-line; text-shadow: 1px 1px 2px #000; }
         .story-hint { position: absolute; right: 15px; bottom: 10px; font-size: 12px; color: #aaa; animation: blink 1.5s infinite; }
@@ -49,7 +65,7 @@
         .ui-panel { border: 2px solid #aaa; padding: 15px; width: 90%; max-width: 450px; margin: 0 auto; border-radius: 10px; background-color: #1e1e1e; min-height: 160px; position: relative;}
         #message-box { font-size: 15px; margin-bottom: 15px; color: #feca57; min-height: 40px; white-space: pre-line; }
         
-        button { padding: 8px 12px; font-size: 15px; cursor: pointer; border-radius: 5px; border: none; font-weight: bold; margin: 4px; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+        button { padding: 8px 12px; font-size: 15px; cursor: pointer; border-radius: 5px; border: none; font-weight: bold; margin: 4px; }
         
         #action-menu { display: flex; flex-wrap: wrap; justify-content: center; }
         #skill-menu, #item-menu, #target-menu, #qte-area, #mash-area { display: none; }
@@ -76,7 +92,6 @@
         
         #action-btn, #hold-btn { background-color: #ff9f43; color: #fff; transform: scale(1.1); padding: 12px 30px; font-size: 18px; display: inline-block;}
         #action-btn:active { transform: scale(0.9); }
-        #hold-btn { touch-action: none; }
         #hold-btn:active { transform: scale(0.95); box-shadow: 0 0 15px #f39c12; }
 
         /* 逃跑小遊戲專屬 */
@@ -190,7 +205,7 @@
                     <div class="qte-cursor" id="qte-cursor-3"></div>
                 </div>
                 <button id="action-btn" onpointerdown="checkQte()">動作！</button>
-                <button id="hold-btn" onpointerdown="startHoldQte(event)" onpointerup="endHoldQte(event)" onpointercancel="endHoldQte(event)" oncontextmenu="event.preventDefault(); return false;" style="display: none;">按住蓄力！</button>
+                <button id="hold-btn" onpointerdown="startHoldQte(event)" onpointerup="endHoldQte(event)" onpointercancel="endHoldQte(event)" style="display: none;">按住蓄力！</button>
             </div>
 
             <div id="mash-area">
@@ -202,6 +217,9 @@
     </div>
 
     <script>
+        // 【重要優化】：全局封鎖右鍵/長按選單
+        document.addEventListener('contextmenu', event => event.preventDefault());
+
         // ==========================================
         // 🎵 音樂切換系統
         // ==========================================
@@ -344,7 +362,6 @@
 
         function resumeStoryAfterBattle() {
             if (selectedBoss === 'cleaner') {
-                // 清掃者打完後暫時回主選單
                 showScreen('screen-menu'); return; 
             } else {
                 storyScript = getProloguePart3(selectedBoss); baseStoryLength = storyScript.length;
@@ -355,21 +372,14 @@
         function renderStoryLine() {
             if (currentStoryIndex >= storyScript.length) {
                 if (storyScript[storyScript.length - 1].text.includes("完】") || storyScript[storyScript.length - 1].text.includes("啟程】")) { 
-                    // 【BUG修復】：加入 300ms 延遲，防止玩家點擊劇情結束時「鬼影觸控」誤按到主選單的按鈕
-                    setTimeout(() => { showScreen('screen-menu'); }, 300); 
+                    setTimeout(() => { showScreen('screen-menu'); }, 300); // 防誤觸保護
                     return; 
                 } 
-                else { 
-                    changeBGM(selectedBoss); 
-                    startBattle(); return; 
-                }
+                else { changeBGM(selectedBoss); startBattle(); return; }
             }
             
             let line = storyScript[currentStoryIndex];
-            if (line.action === 'run_minigame') { 
-                changeBGM('cleaner'); 
-                startRunMinigame(); return; 
-            }
+            if (line.action === 'run_minigame') { changeBGM('cleaner'); startRunMinigame(); return; }
 
             document.getElementById('screen-story').style.backgroundColor = line.bg;
             document.getElementById('story-speaker').innerText = line.speaker ? `【${line.speaker}】` : "";
@@ -578,8 +588,8 @@
             } 
             else if (pendingAction === 'issen') { 
                 player.sp -= 3; ui.playerSp.innerText = player.sp; configureQteZones('issen'); 
-                // 【極限強化】：一閃反應時間降至 0.25 秒！
-                setupQteUI("click", "拔刀！", "#e74c3c", `對 ${enemies[index].name} 施展【一閃】！\n(紅光出現瞬間拔刀！極限 0.25秒！)`); qteType = 'normal'; startQteAnimation(); 
+                // 【極限強化】：一閃反應時間降至 0.4 秒 (400ms)
+                setupQteUI("click", "拔刀！", "#e74c3c", `對 ${enemies[index].name} 施展【一閃】！\n(紅光出現瞬間拔刀！極限 0.4秒！)`); qteType = 'normal'; startQteAnimation(); 
             } 
             else if (pendingAction === 'moonCombo') { player.sp -= 4; ui.playerSp.innerText = player.sp; comboCount = 0; configureQteZones('moonCombo'); setupQteUI("click", "踩踏！", "#e056fd", `對 ${enemies[index].name} 發動【連環踢】！\n(進入區域時不斷點擊)`); startQteAnimation(); } 
             else { 
@@ -622,9 +632,11 @@
                 issenTimeout = setTimeout(() => {
                     if(!isQteActive) return;
                     issenState = 'active'; ui.mainZone.style.display = 'block'; ui.mainZone.style.left = '45%'; ui.mainZone.style.width = '10%'; ui.mainZone.style.backgroundColor = '#e74c3c';
+                    
+                    // 【修改】：一閃反應時間設定為極限 0.4 秒 (400ms)
                     issenReactionTimeout = setTimeout(() => { 
                         if(!isQteActive) return; issenState = 'done'; isQteActive = false; ui.mainZone.style.display = 'none'; checkQteResult(); 
-                    }, 250); // 修改為超極限 250ms
+                    }, 400); 
                 }, waitTime);
                 return; 
             }
@@ -637,7 +649,7 @@
                 ui.qteCursor.style.left = '0%'; document.getElementById('qte-cursor-2').style.left = -gap1 + '%'; document.getElementById('qte-cursor-3').style.left = -gap2 + '%';
                 document.getElementById('qte-cursor-2').style.display = 'block'; document.getElementById('qte-cursor-3').style.display = 'block';
             } else {
-                cursorPosition = 0; cursorDirection = 1; ui.qteCursor.style.left = (cursorDirection===1 ? '0%' : '100%');
+                cursorPosition = 0; cursorDirection = 1; ui.qteCursor.style.left = '0%';
             }
             
             let lastTime = 0;
@@ -653,53 +665,53 @@
                     ui.mainZone.style.left = targetStart + '%';
                 }
 
+                // 【優化】：Lag 卡頓不再瞬移，而是速度歸零後恢復，保證絕對能按到
+                let currentSpeed = qteSpeed;
                 if (qteType === 'lag') {
                     lagTimer -= deltaTime;
                     if (lagTimer <= 0) {
                         isLagPause = !isLagPause;
-                        lagTimer = isLagPause ? 150 : 300 + Math.random() * 200; 
-                        if (!isLagPause) { cursorPosition += 15 * cursorDirection; playSound('click'); } 
+                        lagTimer = isLagPause ? 150 : 300 + Math.random() * 300; 
+                        if (!isLagPause) playSound('click'); 
                     }
+                    if (isLagPause) currentSpeed = 0; // 卡頓時速度為 0
                 }
 
-                // 【優化】：修復假動作平滑度，不再使用會導致跨越判定的超高數值
                 if (qteType === 'fakeout' && !fakeoutTriggered && cursorPosition >= 45 && cursorDirection === 1) { 
                     fakeoutTriggered = true; cancelAnimationFrame(qteReq); 
                     setTimeout(() => { qteSpeed = 2.5; lastTime = 0; if (isQteActive) qteReq = requestAnimationFrame(moveCursor); }, 400); 
                     return; 
                 }
 
-                if (!isLagPause) {
-                    if (pendingAction === 'moonHold') {
-                        cursorPosition += (qteSpeed * timeMultiplier * cursorDirection); if (cursorPosition >= 100) { cursorPosition = 100; cursorDirection = -1; } else if (cursorPosition <= 0) { cursorPosition = 0; cursorDirection = 1; } ui.qteCursor.style.left = cursorPosition + '%'; qteReq = requestAnimationFrame(moveCursor);
-                    } else if (pendingAction === 'safeSlash') {
-                        let allDone = true;
-                        for (let i = 0; i < 3; i++) {
-                            if (multiCursorActive[i]) {
-                                multiCursorPos[i] += (qteSpeed * timeMultiplier);
-                                let cElem = i === 0 ? ui.qteCursor : document.getElementById(`qte-cursor-${i+1}`);
-                                if (multiCursorPos[i] >= 0) cElem.style.left = multiCursorPos[i] + '%';
-                                if (multiCursorPos[i] >= 100) { multiCursorActive[i] = false; cElem.style.display = 'none'; playSound('miss'); if (currentCursorTarget === i) currentCursorTarget++; } else { allDone = false; }
-                            }
+                if (pendingAction === 'moonHold') {
+                    cursorPosition += (currentSpeed * timeMultiplier * cursorDirection); if (cursorPosition >= 100) { cursorPosition = 100; cursorDirection = -1; } else if (cursorPosition <= 0) { cursorPosition = 0; cursorDirection = 1; } ui.qteCursor.style.left = cursorPosition + '%'; qteReq = requestAnimationFrame(moveCursor);
+                } else if (pendingAction === 'safeSlash') {
+                    let allDone = true;
+                    for (let i = 0; i < 3; i++) {
+                        if (multiCursorActive[i]) {
+                            multiCursorPos[i] += (currentSpeed * timeMultiplier);
+                            let cElem = i === 0 ? ui.qteCursor : document.getElementById(`qte-cursor-${i+1}`);
+                            if (multiCursorPos[i] >= 0) cElem.style.left = multiCursorPos[i] + '%';
+                            if (multiCursorPos[i] >= 100) { multiCursorActive[i] = false; cElem.style.display = 'none'; playSound('miss'); if (currentCursorTarget === i) currentCursorTarget++; } else { allDone = false; }
                         }
-                        if (allDone) { isQteActive = false; checkQteResult(); } else { qteReq = requestAnimationFrame(moveCursor); }
-                    } else {
-                        cursorPosition += (qteSpeed * timeMultiplier * cursorDirection); ui.qteCursor.style.left = cursorPosition + '%';
-                        let isFinished = (cursorDirection === 1 && cursorPosition >= 100) || (cursorDirection === -1 && cursorPosition <= 0);
-                        if (isFinished) { 
-                            if (pendingAction === 'moonCombo') { isQteActive = false; endMoonCombo(); } 
-                            else if (qteType === 'multihit' && multiHitCurrent < multiHitMax - 1) { 
-                                processDefendResult(false, false); 
-                                if (player.hp === 0) { isQteActive = false; ui.qteArea.style.display = 'none'; setTimeout(() => { ui.msgBox.innerText = `${player.name} 倒下了... 戰鬥失敗。`; bgm.pause(); }, 1500); return; } 
-                                multiHitCurrent++; 
-                                ui.msgBox.innerText = `連續攻擊！(第 ${multiHitCurrent + 1} 擊)`; 
-                                // 【BUG修復】：呼叫重新初始化動畫
-                                startQteAnimation(); 
-                            } 
-                            else { isQteActive = false; checkQteResult(); }
-                        } else { qteReq = requestAnimationFrame(moveCursor); }
                     }
-                } else { qteReq = requestAnimationFrame(moveCursor); }
+                    if (allDone) { isQteActive = false; checkQteResult(); } else { qteReq = requestAnimationFrame(moveCursor); }
+                } else {
+                    cursorPosition += (currentSpeed * timeMultiplier * cursorDirection); ui.qteCursor.style.left = cursorPosition + '%';
+                    let isFinished = (cursorDirection === 1 && cursorPosition >= 100) || (cursorDirection === -1 && cursorPosition <= 0);
+                    if (isFinished) { 
+                        if (pendingAction === 'moonCombo') { isQteActive = false; endMoonCombo(); } 
+                        else if (qteType === 'multihit' && multiHitCurrent < multiHitMax - 1) { 
+                            processDefendResult(false, false); 
+                            if (player.hp === 0) { isQteActive = false; ui.qteArea.style.display = 'none'; setTimeout(() => { ui.msgBox.innerText = `${player.name} 倒下了... 戰鬥失敗。`; bgm.pause(); }, 1500); return; } 
+                            multiHitCurrent++; 
+                            ui.msgBox.innerText = `連續攻擊！(第 ${multiHitCurrent + 1} 擊)`; 
+                            // 重新開始下一發子彈的動畫
+                            startQteAnimation(); 
+                        } 
+                        else { isQteActive = false; checkQteResult(); }
+                    } else { qteReq = requestAnimationFrame(moveCursor); }
+                }
             }
             qteReq = requestAnimationFrame(moveCursor);
         }
@@ -920,7 +932,6 @@
         function executeSingleEnemyAI(enemy) {
             pendingAction = "defend"; qteType = 'normal'; qteSpeed = 1.2; fakeoutTriggered = false; multiHitCurrent = 0; multiHitMax = 1; updatePlayerStatus(); 
 
-            // 【全新：廢墟清掃者 AI】包含 4 種破壞常規的 QTE
             if (enemy.name === "廢墟清掃者") {
                 let moves = ["reverse_hack", "lag_saw", "clash", "shoot"]; 
                 if (!enemy.shield && Math.random() < 0.4) { moves = ["armor"]; }
@@ -937,9 +948,9 @@
                     setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "防禦！", "#3498db", `逆向攻擊！`); startQteAnimation(); }, 2500); 
                 }
                 else if (chosen === "lag_saw") { 
-                    qteType = 'lag'; currentEnemyAttack = { name: "殘影斬擊", dmg: 6, appliesPoison: false }; qteSpeed = 1.0; 
-                    ui.msgBox.innerText = `廢墟清掃者 伺服馬達嚴重卡頓！\n警告：動作產生【殘影與瞬移】！`; 
-                    setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "防禦！", "#3498db", `預判瞬移時機！`); startQteAnimation(); }, 2500); 
+                    qteType = 'lag'; currentEnemyAttack = { name: "殘影斬擊", dmg: 6, appliesPoison: false }; qteSpeed = 1.5; 
+                    ui.msgBox.innerText = `廢墟清掃者 伺服馬達嚴重卡頓！\n警告：動作產生【停頓與殘影】！`; 
+                    setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "防禦！", "#3498db", `預判時機！`); startQteAnimation(); }, 2500); 
                 }
                 else if (chosen === "clash") { 
                     ui.msgBox.innerText = `廢墟清掃者 系統暴走！\n高溫電鋸直接迎面壓來！【極限角力】開始！`; 
@@ -968,15 +979,11 @@
                 if (chosen === "shield") { enemy.shield = true; updateEnemyStatus(enemy); ui.msgBox.innerText = `訓練人偶PRO 啟動了能量護盾！物理攻擊減免！`; activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 2000); }
                 else if (chosen === "charge") { enemy.isCharging = true; updateEnemyStatus(enemy); ui.msgBox.innerText = `訓練人偶PRO 正在進行核心蓄能...\n(下回合將發動極致過載！)`; activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 2000); }
                 else if (chosen === "fakeout") { 
-                    qteType = 'fakeout'; currentEnemyAttack = { name: "變速測試劈砍", dmg: 6, appliesPoison: false }; 
-                    // 【修改】：讓假動作的起手與落下速度更平滑自然
-                    qteSpeed = 1.5; 
+                    qteType = 'fakeout'; currentEnemyAttack = { name: "變速測試劈砍", dmg: 6, appliesPoison: false }; qteSpeed = 1.5; 
                     ui.msgBox.innerText = `訓練人偶PRO 舉起重刃...\n(警告：引擎變速中！)`; setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "防禦 / 閃避！", "#3498db", `看準時機！`); startQteAnimation(); }, 1500); 
                 }
                 else if (chosen === "poison") { 
-                    currentEnemyAttack = { name: "高壓電擊棍", dmg: 4, appliesPoison: true }; 
-                    // 【修改】：賦予電擊棍專屬的明確節奏速度
-                    qteSpeed = 1.8;
+                    currentEnemyAttack = { name: "高壓電擊棍", dmg: 4, appliesPoison: true }; qteSpeed = 1.8;
                     ui.msgBox.innerText = `訓練人偶PRO 揮出【高壓電擊棍】！\n(附帶麻痺干擾效果...)`; setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "防禦 / 閃避！", "#3498db", `電擊襲來！`); startQteAnimation(); }, 1500); 
                 }
             } 
