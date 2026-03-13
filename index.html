@@ -203,18 +203,14 @@
 
     <script>
         // ==========================================
-        // 🎵 音樂切換系統 (支援 bgm.mp3 與 bgm2.mp3)
+        // 🎵 音樂切換系統
         // ==========================================
         const bgm = new Audio('bgm.mp3'); 
         bgm.loop = true; 
         bgm.volume = 0.5;
 
-        // 根據遭遇的 Boss 切換 BGM
         function changeBGM(bossType) {
-            // 如果是清掃者，使用 bgm2.mp3；否則使用原本的 bgm.mp3
             let trackName = (bossType === 'cleaner') ? 'bgm2.mp3' : 'bgm.mp3';
-            
-            // 檢查當前音樂是否已經是我們要播的，避免重複載入導致音樂中斷
             if (!bgm.src.endsWith(trackName)) {
                 bgm.src = trackName;
                 bgm.load();
@@ -249,7 +245,8 @@
             { speaker: "布蕾蒂雅", text: bossDefeated === 'tutorial' ? "表現得一般般吧，但勉強還在可接受的範圍內。" : "乾脆俐落。看來你已經完全準備好了。", bg: "#0a0a2a" },
             { speaker: "布蕾蒂雅", text: "既然暖身完畢，那就可以正式開始你的第一次旅途了。", bg: "#0a0a2a" },
             { speaker: "鈴仙凪人", text: "喂，等等，我本人什麼話都還沒說啊！", bg: "#0a0a2a" },
-            { speaker: "", text: "（布蕾蒂雅完全無視凪人的抗議，直接一腳將他踹進了星之門）\n鈴仙月兔也跟著一同穿越...", bg: "#000" }
+            { speaker: "", text: "（布蕾蒂雅完全無視凪人的抗議，直接一腳將他踹進了星之門）\n鈴仙月兔也跟著一同穿越...", bg: "#000" },
+            { speaker: "", text: "【序章：星空彼方的約定 —— 完】\n(點擊螢幕返回主選單)", bg: "#1a1a2e" }
         ];}
 
         function getChapter1_Part1() { return [
@@ -347,6 +344,7 @@
 
         function resumeStoryAfterBattle() {
             if (selectedBoss === 'cleaner') {
+                // 清掃者打完後暫時回主選單
                 showScreen('screen-menu'); return; 
             } else {
                 storyScript = getProloguePart3(selectedBoss); baseStoryLength = storyScript.length;
@@ -356,16 +354,20 @@
 
         function renderStoryLine() {
             if (currentStoryIndex >= storyScript.length) {
-                if (storyScript[storyScript.length - 1].text.includes("完】") || storyScript[storyScript.length - 1].text.includes("啟程】")) { showScreen('screen-menu'); return; } 
+                if (storyScript[storyScript.length - 1].text.includes("完】") || storyScript[storyScript.length - 1].text.includes("啟程】")) { 
+                    // 【BUG修復】：加入 300ms 延遲，防止玩家點擊劇情結束時「鬼影觸控」誤按到主選單的按鈕
+                    setTimeout(() => { showScreen('screen-menu'); }, 300); 
+                    return; 
+                } 
                 else { 
-                    changeBGM(selectedBoss); // 進入戰鬥前切換音樂
+                    changeBGM(selectedBoss); 
                     startBattle(); return; 
                 }
             }
             
             let line = storyScript[currentStoryIndex];
             if (line.action === 'run_minigame') { 
-                changeBGM('cleaner'); // 逃跑時播放緊張的音樂
+                changeBGM('cleaner'); 
                 startRunMinigame(); return; 
             }
 
@@ -453,11 +455,7 @@
 
         // --- 戰鬥系統 ---
         function selectCharacter(charId) { isStoryMode = false; selectedChar = charId; showScreen('screen-boss'); }
-        function selectBoss(bossId) { 
-            selectedBoss = bossId; playSound('click'); 
-            changeBGM(selectedBoss); 
-            startBattle(); 
-        }
+        function selectBoss(bossId) { selectedBoss = bossId; playSound('click'); changeBGM(selectedBoss); startBattle(); }
 
         function startBattle() {
             let cd = charData[selectedChar];
@@ -580,7 +578,8 @@
             } 
             else if (pendingAction === 'issen') { 
                 player.sp -= 3; ui.playerSp.innerText = player.sp; configureQteZones('issen'); 
-                setupQteUI("click", "拔刀！", "#e74c3c", `對 ${enemies[index].name} 施展【一閃】！\n(紅光出現瞬間拔刀！極限 0.35秒！)`); qteType = 'normal'; startQteAnimation(); 
+                // 【極限強化】：一閃反應時間降至 0.25 秒！
+                setupQteUI("click", "拔刀！", "#e74c3c", `對 ${enemies[index].name} 施展【一閃】！\n(紅光出現瞬間拔刀！極限 0.25秒！)`); qteType = 'normal'; startQteAnimation(); 
             } 
             else if (pendingAction === 'moonCombo') { player.sp -= 4; ui.playerSp.innerText = player.sp; comboCount = 0; configureQteZones('moonCombo'); setupQteUI("click", "踩踏！", "#e056fd", `對 ${enemies[index].name} 發動【連環踢】！\n(進入區域時不斷點擊)`); startQteAnimation(); } 
             else { 
@@ -625,7 +624,7 @@
                     issenState = 'active'; ui.mainZone.style.display = 'block'; ui.mainZone.style.left = '45%'; ui.mainZone.style.width = '10%'; ui.mainZone.style.backgroundColor = '#e74c3c';
                     issenReactionTimeout = setTimeout(() => { 
                         if(!isQteActive) return; issenState = 'done'; isQteActive = false; ui.mainZone.style.display = 'none'; checkQteResult(); 
-                    }, 350); 
+                    }, 250); // 修改為超極限 250ms
                 }, waitTime);
                 return; 
             }
@@ -638,7 +637,7 @@
                 ui.qteCursor.style.left = '0%'; document.getElementById('qte-cursor-2').style.left = -gap1 + '%'; document.getElementById('qte-cursor-3').style.left = -gap2 + '%';
                 document.getElementById('qte-cursor-2').style.display = 'block'; document.getElementById('qte-cursor-3').style.display = 'block';
             } else {
-                cursorPosition = 0; cursorDirection = 1; ui.qteCursor.style.left = '0%';
+                cursorPosition = 0; cursorDirection = 1; ui.qteCursor.style.left = (cursorDirection===1 ? '0%' : '100%');
             }
             
             let lastTime = 0;
@@ -661,6 +660,13 @@
                         lagTimer = isLagPause ? 150 : 300 + Math.random() * 200; 
                         if (!isLagPause) { cursorPosition += 15 * cursorDirection; playSound('click'); } 
                     }
+                }
+
+                // 【優化】：修復假動作平滑度，不再使用會導致跨越判定的超高數值
+                if (qteType === 'fakeout' && !fakeoutTriggered && cursorPosition >= 45 && cursorDirection === 1) { 
+                    fakeoutTriggered = true; cancelAnimationFrame(qteReq); 
+                    setTimeout(() => { qteSpeed = 2.5; lastTime = 0; if (isQteActive) qteReq = requestAnimationFrame(moveCursor); }, 400); 
+                    return; 
                 }
 
                 if (!isLagPause) {
@@ -687,6 +693,7 @@
                                 if (player.hp === 0) { isQteActive = false; ui.qteArea.style.display = 'none'; setTimeout(() => { ui.msgBox.innerText = `${player.name} 倒下了... 戰鬥失敗。`; bgm.pause(); }, 1500); return; } 
                                 multiHitCurrent++; 
                                 ui.msgBox.innerText = `連續攻擊！(第 ${multiHitCurrent + 1} 擊)`; 
+                                // 【BUG修復】：呼叫重新初始化動畫
                                 startQteAnimation(); 
                             } 
                             else { isQteActive = false; checkQteResult(); }
@@ -913,6 +920,7 @@
         function executeSingleEnemyAI(enemy) {
             pendingAction = "defend"; qteType = 'normal'; qteSpeed = 1.2; fakeoutTriggered = false; multiHitCurrent = 0; multiHitMax = 1; updatePlayerStatus(); 
 
+            // 【全新：廢墟清掃者 AI】包含 4 種破壞常規的 QTE
             if (enemy.name === "廢墟清掃者") {
                 let moves = ["reverse_hack", "lag_saw", "clash", "shoot"]; 
                 if (!enemy.shield && Math.random() < 0.4) { moves = ["armor"]; }
@@ -959,8 +967,18 @@
                 let moves = ["charge", "fakeout", "poison"]; if (!enemy.shield) moves.push("shield"); if (moves.includes(enemy.lastMove) && moves.length > 1) { moves = moves.filter(m => m !== enemy.lastMove); } let chosen = moves[Math.floor(Math.random() * moves.length)]; enemy.lastMove = chosen; 
                 if (chosen === "shield") { enemy.shield = true; updateEnemyStatus(enemy); ui.msgBox.innerText = `訓練人偶PRO 啟動了能量護盾！物理攻擊減免！`; activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 2000); }
                 else if (chosen === "charge") { enemy.isCharging = true; updateEnemyStatus(enemy); ui.msgBox.innerText = `訓練人偶PRO 正在進行核心蓄能...\n(下回合將發動極致過載！)`; activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 2000); }
-                else if (chosen === "fakeout") { qteType = 'fakeout'; currentEnemyAttack = { name: "變速測試劈砍", dmg: 6, appliesPoison: false }; ui.msgBox.innerText = `訓練人偶PRO 舉起重刃...\n(警告：引擎變速中！)`; setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "防禦 / 閃避！", "#3498db", `看準時機！`); startQteAnimation(); }, 1500); }
-                else if (chosen === "poison") { currentEnemyAttack = { name: "高壓電擊棍", dmg: 4, appliesPoison: true }; ui.msgBox.innerText = `訓練人偶PRO 揮出【高壓電擊棍】！\n(附帶麻痺干擾效果...)`; setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "防禦 / 閃避！", "#3498db", `電擊襲來！`); startQteAnimation(); }, 1500); }
+                else if (chosen === "fakeout") { 
+                    qteType = 'fakeout'; currentEnemyAttack = { name: "變速測試劈砍", dmg: 6, appliesPoison: false }; 
+                    // 【修改】：讓假動作的起手與落下速度更平滑自然
+                    qteSpeed = 1.5; 
+                    ui.msgBox.innerText = `訓練人偶PRO 舉起重刃...\n(警告：引擎變速中！)`; setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "防禦 / 閃避！", "#3498db", `看準時機！`); startQteAnimation(); }, 1500); 
+                }
+                else if (chosen === "poison") { 
+                    currentEnemyAttack = { name: "高壓電擊棍", dmg: 4, appliesPoison: true }; 
+                    // 【修改】：賦予電擊棍專屬的明確節奏速度
+                    qteSpeed = 1.8;
+                    ui.msgBox.innerText = `訓練人偶PRO 揮出【高壓電擊棍】！\n(附帶麻痺干擾效果...)`; setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "防禦 / 閃避！", "#3498db", `電擊襲來！`); startQteAnimation(); }, 1500); 
+                }
             } 
             else if (enemy.name === "無人機僕從") {
                 let moves = ["multihit", "fast"]; if (!player.blinded) moves.push("blind"); if (moves.includes(enemy.lastMove) && moves.length > 1) { moves = moves.filter(m => m !== enemy.lastMove); } let chosen = moves[Math.floor(Math.random() * moves.length)]; enemy.lastMove = chosen;
