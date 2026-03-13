@@ -79,7 +79,8 @@
         .qte-target-main { position: absolute; height: 100%; display: none; transition: width 0.1s ease, left 0.1s ease; } 
         .qte-target-perfect { position: absolute; height: 100%; z-index: 2; display: none; } 
         .qte-target-aoe { position: absolute; height: 100%; width: 10%; background-color: #2ecc71; display: none; }
-        .qte-cursor { position: absolute; left: 0%; width: 6px; height: 100%; background-color: #fff; box-shadow: 0 0 5px #fff; z-index: 3; }
+        /* 加入過渡效果讓游標隱形時比較平滑 */
+        .qte-cursor { position: absolute; left: 0%; width: 6px; height: 100%; background-color: #fff; box-shadow: 0 0 5px #fff; z-index: 3; transition: opacity 0.1s; }
         #qte-cursor-2, #qte-cursor-3 { display: none; } 
         
         .blind-mode .qte-target-main, .blind-mode .qte-target-perfect, .blind-mode .qte-target-aoe { opacity: 0 !important; }
@@ -205,7 +206,7 @@
                     <div class="qte-cursor" id="qte-cursor-3"></div>
                 </div>
                 <button id="action-btn" onpointerdown="checkQte()">動作！</button>
-                <button id="hold-btn" onpointerdown="startHoldQte(event)" onpointerup="endHoldQte(event)" onpointercancel="endHoldQte(event)" style="display: none;">按住蓄力！</button>
+                <button id="hold-btn" onpointerdown="startHoldQte(event)" onpointerup="endHoldQte(event)" onpointerleave="endHoldQte(event)" style="display:none;">按住蓄力！</button>
             </div>
 
             <div id="mash-area">
@@ -217,7 +218,7 @@
     </div>
 
     <script>
-        // 【重要優化】：全局封鎖右鍵/長按選單
+        // 【重要優化】：全局封鎖右鍵/長按選單，防止瘋狂連打時卡出瀏覽器選單
         document.addEventListener('contextmenu', event => event.preventDefault());
 
         // ==========================================
@@ -338,9 +339,11 @@
         let aoeHitStatus = [false, false, false], aoeHitCount = 0; let qteSpeed = 1.2, qteType = 'normal'; 
         
         let targetMoving = false, targetMoveDir = 1; 
-        let lagTimer = 0, isLagPause = false; 
         let isDefensiveMash = false; 
         
+        // 【新增】：多段攻擊結算統計
+        let mhStats = { perfects: 0, successes: 0, misses: 0, dmgTaken: 0, counterTriggered: false };
+
         let fakeoutTriggered = false, multiHitCurrent = 0, multiHitMax = 1, currentEnemyAttack = {}; let comboCount = 0, isHolding = false;
         let runProgress = 0, runMax = 10, runPlayerHp = 25;
 
@@ -526,9 +529,10 @@
             ui.playerStatus.innerHTML = statusStr; if (player.blinded) ui.qteBar.classList.add('blind-mode'); else ui.qteBar.classList.remove('blind-mode');
         }
         function updateEnemyStatus(enemy) {
-            if(!document.getElementById(`enemy-${enemy.id}-status`)) return;
+            let statusElem = document.getElementById(`enemy-${enemy.id}-status`);
+            if(!statusElem) return;
             let statusStr = ""; if (enemy.shield) statusStr += "[動態裝甲保護中] "; if (enemy.isCharging) statusStr += "[過載蓄能中] ";
-            document.getElementById(`enemy-${enemy.id}-status`).innerText = statusStr;
+            statusElem.innerText = statusStr;
         }
 
         function openSkillMenu() { ui.actionMenu.style.display = 'none'; ui.skillMenu.style.display = 'block'; ui.msgBox.innerText = "請選擇技能。"; }
@@ -581,28 +585,39 @@
             
             if (target.name === "廢墟清掃者" && pendingAction === 'attack') { targetMoving = true; targetMoveDir = 1; }
 
+            // 【重要修復】：明確重置所有狀態，防止上一次防禦的特殊狀態遺留到玩家攻擊回合
+            qteType = 'normal'; qteSpeed = 1.2; 
+
             if (pendingAction === 'skill') { player.sp -= skillCost; ui.playerSp.innerText = player.sp; ui.msgBox.innerText = `對 ${enemies[index].name} 施展【破甲擊】！\n(2秒內瘋狂連打集氣！)`; startMashQte(); } 
             else if (pendingAction === 'safeSlash') { 
                 player.sp -= 2; ui.playerSp.innerText = player.sp; configureQteZones('safeSlash'); qteSpeed = 1.5 + Math.random() * 1.0; 
-                setupQteUI("click", "三連斬！", "#3498db", `對 ${enemies[index].name} 施展【星屑斬】！\n(注意：每次揮劍速度與節奏都是隨機的！)`); qteType = 'normal'; startQteAnimation(); 
+                setupQteUI("click", "三連斬！", "#3498db", `對 ${enemies[index].name} 施展【星屑斬】！\n(注意：每次揮劍速度與節奏都是隨機的！)`); startQteAnimation(); 
             } 
             else if (pendingAction === 'issen') { 
                 player.sp -= 3; ui.playerSp.innerText = player.sp; configureQteZones('issen'); 
                 // 【極限強化】：一閃反應時間降至 0.4 秒 (400ms)
-                setupQteUI("click", "拔刀！", "#e74c3c", `對 ${enemies[index].name} 施展【一閃】！\n(紅光出現瞬間拔刀！極限 0.4秒！)`); qteType = 'normal'; startQteAnimation(); 
+                setupQteUI("click", "拔刀！", "#e74c3c", `對 ${enemies[index].name} 施展【一閃】！\n(紅光出現瞬間拔刀！極限 0.4秒！)`); startQteAnimation(); 
             } 
-            else if (pendingAction === 'moonCombo') { player.sp -= 4; ui.playerSp.innerText = player.sp; comboCount = 0; configureQteZones('moonCombo'); setupQteUI("click", "踩踏！", "#e056fd", `對 ${enemies[index].name} 發動【連環踢】！\n(進入區域時不斷點擊)`); startQteAnimation(); } 
+            else if (pendingAction === 'moonCombo') { 
+                player.sp -= 4; ui.playerSp.innerText = player.sp; comboCount = 0; configureQteZones('moonCombo'); 
+                setupQteUI("click", "踩踏！", "#e056fd", `對 ${enemies[index].name} 發動【連環踢】！\n(進入區域時不斷點擊)`); startQteAnimation(); 
+            } 
             else { 
                 configureQteZones('attack'); 
                 let msg = `準備攻擊 ${enemies[index].name}！`;
                 if (targetMoving) msg += `\n(⚠️動態裝甲：目標區域移動中！看準時機！)`;
-                setupQteUI("click", "打擊！", "#ff9f43", msg); qteSpeed = 1.2; qteType = 'normal'; startQteAnimation(); 
+                setupQteUI("click", "打擊！", "#ff9f43", msg); startQteAnimation(); 
             }
         }
 
         function configureQteZones(type) {
-            ui.mainZone.style.display = 'none'; ui.perfectZone.style.display = 'none'; ui.aoeZones.forEach(z => { z.style.display = 'none'; z.style.backgroundColor = '#2ecc71'; z.style.width = '10%'; });
-            document.getElementById('qte-cursor-2').style.display = 'none'; document.getElementById('qte-cursor-3').style.display = 'none'; ui.qteCursor.style.display = 'block';
+            if(ui.mainZone) ui.mainZone.style.display = 'none'; 
+            if(ui.perfectZone) ui.perfectZone.style.display = 'none'; 
+            if(ui.aoeZones) ui.aoeZones.forEach(z => { if(z) { z.style.display = 'none'; z.style.backgroundColor = '#2ecc71'; z.style.width = '10%'; }});
+            
+            let c2 = document.getElementById('qte-cursor-2'); if(c2) c2.style.display = 'none'; 
+            let c3 = document.getElementById('qte-cursor-3'); if(c3) c3.style.display = 'none'; 
+            if(ui.qteCursor) { ui.qteCursor.style.display = 'block'; ui.qteCursor.style.opacity = '1'; }
 
             if (type === 'attack') { targetStart = 70; targetWidth = 20; perfectStart = -1; perfectEnd = -1; ui.mainZone.style.left = targetStart + '%'; ui.mainZone.style.width = targetWidth + '%'; ui.mainZone.style.backgroundColor = '#2ecc71'; ui.mainZone.style.display = 'block'; } 
             else if (type === 'safeSlash') { targetStart = 75; targetWidth = 15; perfectStart = -1; perfectEnd = -1; ui.mainZone.style.left = targetStart + '%'; ui.mainZone.style.width = targetWidth + '%'; ui.mainZone.style.backgroundColor = '#3498db'; ui.mainZone.style.display = 'block'; aoeHitCount = 0; } 
@@ -613,10 +628,26 @@
             else if (type === 'aoe_bredeia') { ui.aoeZones[0].style.display = 'block'; ui.aoeZones[0].style.left = '20%'; ui.aoeZones[0].style.backgroundColor = '#2ecc71'; ui.aoeZones[1].style.display = 'block'; ui.aoeZones[1].style.left = '50%'; ui.aoeZones[1].style.backgroundColor = '#2ecc71'; ui.aoeZones[2].style.display = 'block'; ui.aoeZones[2].style.left = '80%'; ui.aoeZones[2].style.backgroundColor = '#2ecc71'; aoeHitStatus = [false, false, false]; aoeHitCount = 0; }
         }
 
+        // 【修復重點】：加入完整防護的 setupQteUI
         function setupQteUI(btnType, btnText, btnColor, msg) { 
-            ui.qteArea.style.display = 'block'; ui.msgBox.innerText = msg; 
-            if (btnType === 'hold') { ui.actionBtn.style.display = 'none'; ui.holdBtn.style.display = 'inline-block'; ui.holdBtn.innerText = btnText; ui.holdBtn.style.backgroundColor = btnColor; } 
-            else { ui.holdBtn.style.display = 'none'; ui.actionBtn.style.display = 'inline-block'; ui.actionBtn.innerText = btnText; ui.actionBtn.style.backgroundColor = btnColor; }
+            if (ui.qteArea) ui.qteArea.style.display = 'block'; 
+            if (ui.msgBox) ui.msgBox.innerText = msg; 
+            
+            if (btnType === 'hold') { 
+                if (ui.actionBtn) ui.actionBtn.style.display = 'none'; 
+                if (ui.holdBtn) {
+                    ui.holdBtn.style.display = 'inline-block'; 
+                    ui.holdBtn.innerText = btnText; 
+                    ui.holdBtn.style.backgroundColor = btnColor; 
+                }
+            } else { 
+                if (ui.holdBtn) ui.holdBtn.style.display = 'none'; 
+                if (ui.actionBtn) {
+                    ui.actionBtn.style.display = 'inline-block'; 
+                    ui.actionBtn.innerText = btnText; 
+                    ui.actionBtn.style.backgroundColor = btnColor; 
+                }
+            }
         }
 
         function startHoldQte(e) { if (e && e.cancelable) e.preventDefault(); if (e && e.target && e.pointerId) { e.target.setPointerCapture(e.pointerId); } if (isQteActive) return; playSound('skill'); isHolding = true; ui.holdBtn.innerText = "鬆開爆發！"; ui.holdBtn.style.backgroundColor = "#e74c3c"; qteSpeed = 1.0; qteType = 'normal'; startQteAnimation(); }
@@ -624,7 +655,8 @@
 
         function startQteAnimation() {
             if (qteReq) cancelAnimationFrame(qteReq); 
-            isQteActive = true; lagTimer = 500; isLagPause = false;
+            isQteActive = true; 
+            if (ui.qteCursor) ui.qteCursor.style.opacity = '1';
             
             if (pendingAction === 'issen') {
                 issenSuccess = false; issenState = 'waiting'; ui.qteCursor.style.left = '50%';
@@ -665,18 +697,16 @@
                     ui.mainZone.style.left = targetStart + '%';
                 }
 
-                // 【優化】：Lag 卡頓不再瞬移，而是速度歸零後恢復，保證絕對能按到
-                let currentSpeed = qteSpeed;
-                if (qteType === 'lag') {
-                    lagTimer -= deltaTime;
-                    if (lagTimer <= 0) {
-                        isLagPause = !isLagPause;
-                        lagTimer = isLagPause ? 150 : 300 + Math.random() * 300; 
-                        if (!isLagPause) playSound('click'); 
+                // 【創新機制 2：光學迷彩隱形游標】
+                if (qteType === 'invisible') {
+                    if (cursorPosition > 25 && cursorPosition < targetStart + targetWidth + 5) {
+                        if(ui.qteCursor) ui.qteCursor.style.opacity = '0';
+                    } else {
+                        if(ui.qteCursor) ui.qteCursor.style.opacity = '1';
                     }
-                    if (isLagPause) currentSpeed = 0; // 卡頓時速度為 0
                 }
 
+                // 【修復】假動作平滑變速
                 if (qteType === 'fakeout' && !fakeoutTriggered && cursorPosition >= 45 && cursorDirection === 1) { 
                     fakeoutTriggered = true; cancelAnimationFrame(qteReq); 
                     setTimeout(() => { qteSpeed = 2.5; lastTime = 0; if (isQteActive) qteReq = requestAnimationFrame(moveCursor); }, 400); 
@@ -684,30 +714,39 @@
                 }
 
                 if (pendingAction === 'moonHold') {
-                    cursorPosition += (currentSpeed * timeMultiplier * cursorDirection); if (cursorPosition >= 100) { cursorPosition = 100; cursorDirection = -1; } else if (cursorPosition <= 0) { cursorPosition = 0; cursorDirection = 1; } ui.qteCursor.style.left = cursorPosition + '%'; qteReq = requestAnimationFrame(moveCursor);
+                    cursorPosition += (qteSpeed * timeMultiplier * cursorDirection); if (cursorPosition >= 100) { cursorPosition = 100; cursorDirection = -1; } else if (cursorPosition <= 0) { cursorPosition = 0; cursorDirection = 1; } ui.qteCursor.style.left = cursorPosition + '%'; qteReq = requestAnimationFrame(moveCursor);
                 } else if (pendingAction === 'safeSlash') {
                     let allDone = true;
                     for (let i = 0; i < 3; i++) {
                         if (multiCursorActive[i]) {
-                            multiCursorPos[i] += (currentSpeed * timeMultiplier);
+                            multiCursorPos[i] += (qteSpeed * timeMultiplier);
                             let cElem = i === 0 ? ui.qteCursor : document.getElementById(`qte-cursor-${i+1}`);
-                            if (multiCursorPos[i] >= 0) cElem.style.left = multiCursorPos[i] + '%';
-                            if (multiCursorPos[i] >= 100) { multiCursorActive[i] = false; cElem.style.display = 'none'; playSound('miss'); if (currentCursorTarget === i) currentCursorTarget++; } else { allDone = false; }
+                            if (multiCursorPos[i] >= 0) if(cElem) cElem.style.left = multiCursorPos[i] + '%';
+                            if (multiCursorPos[i] >= 100) { multiCursorActive[i] = false; if(cElem) cElem.style.display = 'none'; playSound('miss'); if (currentCursorTarget === i) currentCursorTarget++; } else { allDone = false; }
                         }
                     }
                     if (allDone) { isQteActive = false; checkQteResult(); } else { qteReq = requestAnimationFrame(moveCursor); }
                 } else {
-                    cursorPosition += (currentSpeed * timeMultiplier * cursorDirection); ui.qteCursor.style.left = cursorPosition + '%';
+                    cursorPosition += (qteSpeed * timeMultiplier * cursorDirection); ui.qteCursor.style.left = cursorPosition + '%';
                     let isFinished = (cursorDirection === 1 && cursorPosition >= 100) || (cursorDirection === -1 && cursorPosition <= 0);
                     if (isFinished) { 
-                        if (pendingAction === 'moonCombo') { isQteActive = false; endMoonCombo(); } 
-                        else if (qteType === 'multihit' && multiHitCurrent < multiHitMax - 1) { 
-                            processDefendResult(false, false); 
-                            if (player.hp === 0) { isQteActive = false; ui.qteArea.style.display = 'none'; setTimeout(() => { ui.msgBox.innerText = `${player.name} 倒下了... 戰鬥失敗。`; bgm.pause(); }, 1500); return; } 
-                            multiHitCurrent++; 
-                            ui.msgBox.innerText = `連續攻擊！(第 ${multiHitCurrent + 1} 擊)`; 
-                            // 重新開始下一發子彈的動畫
-                            startQteAnimation(); 
+                        if (pendingAction === 'moonCombo') { 
+                            isQteActive = false; endMoonCombo(); 
+                        } 
+                        else if (qteType === 'multihit') { 
+                            // 【多段攻擊統整】：如果沒按到，記錄失敗並繼續
+                            mhStats.misses++;
+                            mhStats.dmgTaken += currentEnemyAttack.dmg;
+                            if (currentEnemyAttack.appliesPoison && !player.poisoned) { player.poisoned = true; updatePlayerStatus(); }
+                            playSound('miss');
+                            
+                            if (multiHitCurrent < multiHitMax - 1) {
+                                multiHitCurrent++; 
+                                ui.msgBox.innerText = `連續攻擊！(第 ${multiHitCurrent + 1} 擊)`; 
+                                startQteAnimation(); 
+                            } else {
+                                isQteActive = false; finalizeMultiHitDefend();
+                            }
                         } 
                         else { isQteActive = false; checkQteResult(); }
                     } else { qteReq = requestAnimationFrame(moveCursor); }
@@ -724,11 +763,11 @@
                 else if (issenState === 'waiting') { issenSuccess = false; clearTimeout(issenTimeout); isQteActive = false; issenState = 'done'; ui.msgBox.innerText = `太早拔刀了！破綻百出！`; playSound('miss'); setTimeout(() => { checkQteResult(); }, 1000); } return;
             }
             if (pendingAction === 'safeSlash') {
-                if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
+if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
                     let pos = multiCursorPos[currentCursorTarget];
                     if (pos >= targetStart && pos <= targetStart + targetWidth) { playSound('hit'); aoeHitCount++; ui.mainZone.style.backgroundColor = '#f1c40f'; setTimeout(() => { ui.mainZone.style.backgroundColor = '#3498db'; }, 100); } else { playSound('miss'); }
                     multiCursorActive[currentCursorTarget] = false; let cElem = currentCursorTarget === 0 ? ui.qteCursor : document.getElementById(`qte-cursor-${currentCursorTarget+1}`);
-                    cElem.style.display = 'none'; currentCursorTarget++; if (currentCursorTarget >= 3) { isQteActive = false; cancelAnimationFrame(qteReq); checkQteResult(); }
+                    if(cElem) cElem.style.display = 'none'; currentCursorTarget++; if (currentCursorTarget >= 3) { isQteActive = false; cancelAnimationFrame(qteReq); checkQteResult(); }
                 }
             }
             else if (pendingAction === 'moonCombo') {
@@ -739,18 +778,65 @@
                 let hitAny = false;
                 if (cursorPosition >= 20 && cursorPosition <= 30 && !aoeHitStatus[0]) { playSound('hit'); aoeHitStatus[0] = true; ui.aoeZones[0].style.backgroundColor = '#f1c40f'; hitAny = true; } else if (cursorPosition >= 50 && cursorPosition <= 60 && !aoeHitStatus[1]) { playSound('hit'); aoeHitStatus[1] = true; ui.aoeZones[1].style.backgroundColor = '#f1c40f'; hitAny = true; } else if (cursorPosition >= 80 && cursorPosition <= 90 && !aoeHitStatus[2]) { playSound('hit'); aoeHitStatus[2] = true; ui.aoeZones[2].style.backgroundColor = '#f1c40f'; hitAny = true; }
                 if (hitAny) { aoeHitCount++; } else { playSound('miss'); }
-            } else if (pendingAction === 'defend' && qteType === 'multihit') {
-                let isPerfect = (cursorPosition >= perfectStart && cursorPosition <= perfectEnd); let isSuccess = (cursorPosition >= targetStart && cursorPosition <= targetStart + targetWidth); processDefendResult(isSuccess, isPerfect);
-                if (player.hp === 0) { isQteActive = false; cancelAnimationFrame(qteReq); ui.qteArea.style.display = 'none'; setTimeout(() => { ui.msgBox.innerText = `${player.name} 倒下了... 戰鬥失敗。`; bgm.pause(); }, 1500); return; }
-                if (isPerfect && player.counterStance) { isQteActive = false; cancelAnimationFrame(qteReq); ui.qteArea.style.display = 'none'; setTimeout(() => { activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 2000); }, 1500); return; }
+            } 
+            else if (pendingAction === 'defend' && qteType === 'multihit') {
+                // 【多段攻擊統整】：點擊時不立刻結算畫面，只記錄數據並進下一發
+                let isPerfect = (cursorPosition >= perfectStart && cursorPosition <= perfectEnd); 
+                let isSuccess = (cursorPosition >= targetStart && cursorPosition <= targetStart + targetWidth);
+                
+                if (isPerfect) { 
+                    mhStats.perfects++; if (player.counterStance) mhStats.counterTriggered = true; playSound('skill'); 
+                } else if (isSuccess) { 
+                    mhStats.successes++; mhStats.dmgTaken += Math.max(currentEnemyAttack.dmg - qteBonus, 0); playSound('guard'); 
+                } else { 
+                    mhStats.misses++; mhStats.dmgTaken += currentEnemyAttack.dmg; 
+                    if (currentEnemyAttack.appliesPoison && !player.poisoned) { player.poisoned = true; updatePlayerStatus(); } playSound('miss'); 
+                }
+                
                 if (multiHitCurrent < multiHitMax - 1) { 
                     multiHitCurrent++; 
                     ui.msgBox.innerText = `連續攻擊！(第 ${multiHitCurrent + 1} 擊)`; 
                     startQteAnimation(); 
                 } else { 
-                    isQteActive = false; cancelAnimationFrame(qteReq); ui.qteArea.style.display = 'none'; setTimeout(() => { activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 1500); }, 1000); 
+                    isQteActive = false; cancelAnimationFrame(qteReq); finalizeMultiHitDefend(); 
                 }
-            } else { isQteActive = false; cancelAnimationFrame(qteReq); checkQteResult(); }
+            } 
+            else { isQteActive = false; cancelAnimationFrame(qteReq); checkQteResult(); }
+        }
+
+        // 【新增】：多段攻擊統一結算函數
+        function finalizeMultiHitDefend() {
+            ui.qteArea.style.display = 'none'; ui.mainZone.style.display = 'none';
+            let attacker = enemies[activeEnemyIndex];
+            let msg = `【結算】完美 ${mhStats.perfects}次 | 成功 ${mhStats.successes}次 | 失敗 ${mhStats.misses}次\n`;
+            
+            if (mhStats.counterTriggered && player.counterStance) {
+                playSound('skill'); let counterDmg = 5 + currentEnemyAttack.dmg;
+                msg += `✨ 完美見切！發動反擊造成 ${counterDmg} 點傷害！\n`;
+                attacker.hp = Math.max(attacker.hp - counterDmg, 0); 
+                let hpElem = document.getElementById(`enemy-${attacker.id}-hp`);
+                if(hpElem) hpElem.innerText = attacker.hp;
+            }
+            
+            if (mhStats.dmgTaken > 0) {
+                msg += `💥 總計受到了 ${mhStats.dmgTaken} 點傷害。`;
+                player.hp = Math.max(player.hp - mhStats.dmgTaken, 0); ui.playerHp.innerText = player.hp;
+            } else {
+                msg += `🛡️ 完美防禦了所有攻擊！`;
+            }
+            
+            ui.msgBox.innerText = msg;
+            
+            if (player.hp === 0) { setTimeout(() => { ui.msgBox.innerText = `${player.name} 倒下了... 戰鬥失敗。`; bgm.pause(); }, 1500); return; }
+            if (attacker.hp === 0) { 
+                attacker.isAlive = false; 
+                let box = document.getElementById(`enemy-${attacker.id}-box`); 
+                if(box) { box.style.transform = 'scale(0)'; box.style.opacity = '0'; }
+                setTimeout(() => { if(box) box.style.display = 'none'; checkWinCondition(); }, 500); 
+                return; 
+            }
+            
+            activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 2500);
         }
 
         function checkHoldResult() {
@@ -887,7 +973,7 @@
             }
             
             if (player.hp === 0) { setTimeout(() => { ui.msgBox.innerText = `${player.name} 倒下了... 戰鬥失敗。`; bgm.pause(); }, 1500); return; }
-            if (attacker.hp === 0) { attacker.isAlive = false; let box = document.getElementById(`enemy-${attacker.id}-box`); box.style.transform = 'scale(0)'; box.style.opacity = '0'; setTimeout(() => { box.style.display = 'none'; checkWinCondition(); }, 500); return; }
+            if (attacker.hp === 0) { attacker.isAlive = false; let box = document.getElementById(`enemy-${attacker.id}-box`); if(box) { box.style.transform = 'scale(0)'; box.style.opacity = '0'; } setTimeout(() => { if(box) box.style.display = 'none'; checkWinCondition(); }, 500); return; }
             
             activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 1500);
         }
@@ -903,7 +989,7 @@
 
         function applyDamageToTarget(target, dmg) {
             target.hp = Math.max(target.hp - dmg, 0); document.getElementById(`enemy-${target.id}-hp`).innerText = target.hp;
-            if (target.hp === 0) { target.isAlive = false; let box = document.getElementById(`enemy-${target.id}-box`); box.style.transform = 'scale(0)'; box.style.opacity = '0'; setTimeout(() => { box.style.display = 'none'; ui.msgBox.innerText = `${target.name} 機能停止！`; setTimeout(checkWinCondition, 1500); }, 500); } 
+            if (target.hp === 0) { target.isAlive = false; let box = document.getElementById(`enemy-${target.id}-box`); if(box) { box.style.transform = 'scale(0)'; box.style.opacity = '0'; } setTimeout(() => { if(box) box.style.display = 'none'; ui.msgBox.innerText = `${target.name} 機能停止！`; setTimeout(checkWinCondition, 1500); }, 500); } 
             else { setTimeout(checkWinCondition, 1500); }
         }
 
@@ -931,9 +1017,10 @@
 
         function executeSingleEnemyAI(enemy) {
             pendingAction = "defend"; qteType = 'normal'; qteSpeed = 1.2; fakeoutTriggered = false; multiHitCurrent = 0; multiHitMax = 1; updatePlayerStatus(); 
+            mhStats = { perfects: 0, successes: 0, misses: 0, dmgTaken: 0, counterTriggered: false }; // 重置多段攻擊統計
 
             if (enemy.name === "廢墟清掃者") {
-                let moves = ["reverse_hack", "lag_saw", "clash", "shoot"]; 
+                let moves = ["reverse_hack", "invisible_strike", "clash", "shoot"]; 
                 if (!enemy.shield && Math.random() < 0.4) { moves = ["armor"]; }
                 let chosen = moves[Math.floor(Math.random() * moves.length)]; enemy.lastMove = chosen; 
 
@@ -947,10 +1034,11 @@
                     ui.msgBox.innerText = `廢墟清掃者 釋放干擾電波！\n【系統駭入】警告：視覺神經錯亂，游標反轉！`; 
                     setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "防禦！", "#3498db", `逆向攻擊！`); startQteAnimation(); }, 2500); 
                 }
-                else if (chosen === "lag_saw") { 
-                    qteType = 'lag'; currentEnemyAttack = { name: "殘影斬擊", dmg: 6, appliesPoison: false }; qteSpeed = 1.5; 
-                    ui.msgBox.innerText = `廢墟清掃者 伺服馬達嚴重卡頓！\n警告：動作產生【停頓與殘影】！`; 
-                    setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "防禦！", "#3498db", `預判時機！`); startQteAnimation(); }, 2500); 
+                // 【替換為新機制】：光學迷彩隱形斬擊
+                else if (chosen === "invisible_strike") { 
+                    qteType = 'invisible'; currentEnemyAttack = { name: "隱形斬擊", dmg: 6, appliesPoison: false }; qteSpeed = 1.2; 
+                    ui.msgBox.innerText = `廢墟清掃者 啟動光學迷彩！\n警告：游標即將隱形，請憑節奏感防禦！`; 
+                    setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "防禦！", "#3498db", `注意隱形時機！`); startQteAnimation(); }, 2500); 
                 }
                 else if (chosen === "clash") { 
                     ui.msgBox.innerText = `廢墟清掃者 系統暴走！\n高溫電鋸直接迎面壓來！【極限角力】開始！`; 
@@ -990,7 +1078,11 @@
             else if (enemy.name === "無人機僕從") {
                 let moves = ["multihit", "fast"]; if (!player.blinded) moves.push("blind"); if (moves.includes(enemy.lastMove) && moves.length > 1) { moves = moves.filter(m => m !== enemy.lastMove); } let chosen = moves[Math.floor(Math.random() * moves.length)]; enemy.lastMove = chosen;
                 if (chosen === "blind") { player.blinded = true; updatePlayerStatus(); ui.msgBox.innerText = `無人機僕從 投擲了【致盲閃光彈】！\n${player.name} 的視線被干擾了！`; activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 2000); }
-                else if (chosen === "multihit") { qteType = 'multihit'; multiHitMax = 3; qteSpeed = 1.5; currentEnemyAttack = { name: "連續打擊測試", dmg: 2, appliesPoison: false }; ui.msgBox.innerText = `無人機僕從 發動【連續打擊測試】！\n(連續防禦 3 次！)`; setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "連續防禦！", "#3498db", `攻擊！(第 1 擊)`); startQteAnimation(); }, 1500); }
+                else if (chosen === "multihit") { 
+                    qteType = 'multihit'; multiHitMax = 3; qteSpeed = 1.5; currentEnemyAttack = { name: "連續打擊測試", dmg: 2, appliesPoison: false }; 
+                    ui.msgBox.innerText = `無人機僕從 發動【連續打擊測試】！\n(連續防禦 3 次！)`; 
+                    setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "連續防禦！", "#3498db", `攻擊！(第 1 擊)`); startQteAnimation(); }, 1500); 
+                }
                 else if (chosen === "fast") { qteSpeed = 2.5; currentEnemyAttack = { name: "急速俯衝", dmg: 3, appliesPoison: false }; ui.msgBox.innerText = `無人機僕從 啟動噴射引擎！\n(極高速衝撞！)`; setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "防禦 / 閃避！", "#3498db", `快速攻擊襲來！`); startQteAnimation(); }, 1500); }
             }
         }
