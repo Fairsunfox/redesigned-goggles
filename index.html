@@ -79,7 +79,6 @@
         .qte-target-main { position: absolute; height: 100%; display: none; transition: width 0.1s ease, left 0.1s ease; } 
         .qte-target-perfect { position: absolute; height: 100%; z-index: 2; display: none; } 
         .qte-target-aoe { position: absolute; height: 100%; width: 10%; background-color: #2ecc71; display: none; }
-        /* 加入過渡效果讓游標隱形時比較平滑 */
         .qte-cursor { position: absolute; left: 0%; width: 6px; height: 100%; background-color: #fff; box-shadow: 0 0 5px #fff; z-index: 3; transition: opacity 0.1s; }
         #qte-cursor-2, #qte-cursor-3 { display: none; } 
         
@@ -218,12 +217,8 @@
     </div>
 
     <script>
-        // 【重要優化】：全局封鎖右鍵/長按選單，防止瘋狂連打時卡出瀏覽器選單
         document.addEventListener('contextmenu', event => event.preventDefault());
 
-        // ==========================================
-        // 🎵 音樂切換系統
-        // ==========================================
         const bgm = new Audio('bgm.mp3'); 
         bgm.loop = true; 
         bgm.volume = 0.5;
@@ -241,6 +236,10 @@
         const sfx = { hit: new Audio('hit.mp3'), miss: new Audio('miss.mp3'), guard: new Audio('guard.mp3'), skill: new Audio('skill.mp3'), heal: new Audio('heal.mp3'), click: new Audio('click.mp3'), cancel: new Audio('cancel.mp3') };
         function playSound(type) { if(sfx[type]) { sfx[type].currentTime = 0; sfx[type].play().catch(e => {}); } }
 
+<<<<<<< HEAD
+        // ==========================================
+        // 📖 動態劇本資料庫系統 (已修復完整版)
+=======
 
 
         function getChapter1_Part1() { return [
@@ -261,6 +260,7 @@
             { speaker: "布蕾蒂雅", text: "「鈴仙凪人，可千萬不要迷失了。\n當雙方同時向你伸出橄欖枝時，只要做出你心中認為正確的選擇就好。」", bg: "#3e2723" },
             { speak        // ==========================================
         // 📖 動態劇本資料庫系統
+>>>>>>> 001bf44c6cda77188d88c736619e83d6c430beba
         // ==========================================
         function getPart1() {
             return [
@@ -319,6 +319,44 @@
             else if (bossDefeated === 'dummy') { reviewLine = "乾脆俐落。看來你已經完全準備好了。"; }
             else { reviewLine = "沒想到你居然能活著回來。"; } // Fallback
 
+<<<<<<< HEAD
+            return [
+                { speaker: "布蕾蒂雅", text: reviewLine, bg: "#0a0a2a" },
+                { speaker: "布蕾蒂雅", text: "既然暖身完畢，那就可以正式開始你的第一次旅途了。", bg: "#0a0a2a" },
+                { speaker: "鈴仙凪人", text: "喂，等等，我本人什麼話都還沒說啊！", bg: "#0a0a2a" },
+                { speaker: "布蕾蒂雅", text: "誰理你。", bg: "#0a0a2a" },
+                { speaker: "", text: "（布蕾蒂雅完全無視凪人的抗議，直接一腳將他踹進了星之門）", bg: "#000" },
+                { speaker: "布蕾蒂雅", text: "希望你的第一次旅途一切順利……不過，大概是不會太順利啦。", bg: "#000" },
+                
+                // 雪地場景
+                { speaker: "鈴仙凪人", text: "咳……咳咳！可惡，那個叫布蕾蒂雅的傢伙，居然直接把我踹進來……這到底是什麼鬼地方？", bg: "#e0e6ed", textColor: "#2c3e50" },
+                { speaker: "", text: "四周白茫茫的一片，狂風夾雜著暴雪，氣溫低得彷彿連血液都要凍結。", bg: "#e0e6ed", textColor: "#2c3e50" },
+                { speaker: "鈴仙凪人", text: "（不行……失溫太嚴重了……感覺隨時都會倒下……）", bg: "#e0e6ed", textColor: "#2c3e50" },
+                { speaker: "", text: "不出一會兒，凪人的體力便到達極限，倒在了軟綿綿的積雪中。", bg: "#e0e6ed", textColor: "#2c3e50" },
+                { speaker: "", text: "在他意識即將徹底陷入黑暗的最後一刻——\n（叮鈴……叮鈴……）", bg: "#e0e6ed", textColor: "#2c3e50" },
+                { speaker: "", text: "他隱約聽見了，某種清脆的鈴鐺聲正在朝他緩緩靠近。\n隨後，鈴仙凪人徹底失去了意識。", bg: "#000", textColor: "#fff" },
+                
+                // 圖書館場景
+                { speaker: "", text: "（溫暖的觸感包裹著身體，耳邊傳來劈啪作響的柴火聲。）", bg: "#3e2723" },
+                { speaker: "", text: "再次睜開眼時，凪人發現自己回到了彼岸的圖書館。他正舒服地躺在沙發上，享受著壁爐帶來的溫度。", bg: "#3e2723" },
+                { speaker: "布蕾蒂雅", text: "喲，醒來啦？", bg: "#3e2723" },
+                { speaker: "鈴仙凪人", text: "喂喂喂！把我一腳踹進那個會冷死人的鬼地方，妳就沒有什麼別的話想說嗎！？", bg: "#3e2723" },
+                { speaker: "布蕾蒂雅", text: "哎呀，這可不能怪我。我怎麼會知道星之門會把你傳送到那種極端環境？", bg: "#3e2723" },
+                { speaker: "鈴仙凪人", text: "何意味？妳在耍我嗎？", bg: "#3e2723" },
+                { speaker: "布蕾蒂雅", text: "解釋起來很麻煩啦……不過我保證，下次『絕對』不會再發生這種情況了。", bg: "#3e2723" },
+                { speaker: "布蕾蒂雅", text: "撇開這個不談，這隻兔子是你帶回來的特產嗎？", bg: "#3e2723" },
+                { speaker: "", text: "布蕾蒂雅單手拎起一隻毛茸茸的白兔。那隻兔子似乎對這種粗魯的抓法非常反感，正拼命地蹬著短腿四處掙扎。", bg: "#3e2723" },
+                { speaker: "鈴仙凪人", text: "兔子？哪來的？", bg: "#3e2723" },
+                { speaker: "布蕾蒂雅", text: "從你剛剛差點凍死的那個世界，跟著你一起帶回來的啊。", bg: "#3e2723" },
+                { speaker: "布蕾蒂雅", text: "既然你們兩個相遇即是緣分，要不……你來給牠取個名字？", bg: "#3e2723" },
+                { speaker: "鈴仙凪人", text: "我看妳純粹是懶得動腦想名字，才丟給我的吧？\n隨便啦，那就叫……「鈴月仙兔」好了。", bg: "#3e2723" },
+                { speaker: "布蕾蒂雅", text: "超爛。完全沒有品味。\n不如叫「鈴仙月兔」吧，聽起來順口多了。", bg: "#3e2723" },
+                { speaker: "", text: "於是，這隻名為鈴仙月兔的奇妙生物，「算是」正式成為了他們的夥伴。", bg: "#3e2723" },
+                { speaker: "", text: "【序章：星空彼方的約定 —— 完】\n(點擊螢幕返回主選單)", bg: "#1a1a2e" }
+            ];
+        }
+
+=======
             return [
                 { speaker: "布蕾蒂雅", text: reviewLine, bg: "#0a0a2a" },
                 { speaker: "布蕾蒂雅", text: "既然暖身完畢，那就可以正式開始你的第一次旅途了。", bg: "#0a0a2a" },
@@ -356,6 +394,7 @@
         }
 
         // --- 處理第一章的劇情 ---
+>>>>>>> 001bf44c6cda77188d88c736619e83d6c430beba
         function getChapter1_Part1() { return [
             { speaker: "", text: "（滴答……滴答……）\n意識沉入深海，一段模糊的過往在夢境中浮現。", bg: "#4b3832" }, 
             { speaker: "？？？", text: "「████，你看！那裡有兔兔！」", bg: "#4b3832" },
@@ -402,6 +441,10 @@
         let currentStoryIndex = 0; let isTyping = false; let typeTimer; let fullText = "";
 
         // ==========================================
+<<<<<<< HEAD
+        // 【核心變數與函數區（之前被誤刪的就在這）】
+        // ==========================================
+=======
 
         // --- 劇情切換邏輯修復 ---
         function loadChapter(chapterNum) {
@@ -454,6 +497,7 @@ er: "", text: "還沒等凪人反應過來，布蕾蒂雅已經毫不客氣地�
 
         // ==========================================
 
+>>>>>>> 001bf44c6cda77188d88c736619e83d6c430beba
         let selectedChar = ""; let selectedBoss = ""; let isStoryMode = false;
         const charData = { bredeia: { name: "布蕾蒂雅", hp: 20, sp: 20 }, nagito: { name: "鈴仙凪人", hp: 25, sp: 20 }, tsukito: { name: "鈴仙月兔", hp: 20, sp: 20 } };
         let player = {}; let enemies = [];
@@ -470,7 +514,6 @@ er: "", text: "還沒等凪人反應過來，布蕾蒂雅已經毫不客氣地�
             mashArea: document.getElementById('mash-area'), mashFill: document.getElementById('mash-fill'), mashTimer: document.getElementById('mash-timer-text')
         };
 
-        // 創新 QTE 專用變數
         let cursorPosition = 0, qteReq, isQteActive = false; let cursorDirection = 1; 
         let multiCursorPos = [0, 0, 0]; let multiCursorActive = [false, false, false]; let currentCursorTarget = 0;
         let issenState = ''; let issenTimeout; let issenReactionTimeout; let issenSuccess = false;
@@ -479,23 +522,23 @@ er: "", text: "還沒等凪人反應過來，布蕾蒂雅已經毫不客氣地�
         
         let targetMoving = false, targetMoveDir = 1; 
         let isDefensiveMash = false; 
-        
-        // 【新增】：多段攻擊結算統計
         let mhStats = { perfects: 0, successes: 0, misses: 0, dmgTaken: 0, counterTriggered: false };
-
         let fakeoutTriggered = false, multiHitCurrent = 0, multiHitMax = 1, currentEnemyAttack = {}; let comboCount = 0, isHolding = false;
         let runProgress = 0, runMax = 10, runPlayerHp = 25;
-
         let isMashing = false, mashCount = 0, mashTimeLeft = 2000, mashInterval;
 
-        function showScreen(screenId) { playSound('click'); document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(screenId).classList.add('active'); }
+        function showScreen(screenId) { 
+            playSound('click'); 
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
+            document.getElementById(screenId).classList.add('active'); 
+        }
 
-        // --- 劇情系統 ---
+        // --- 劇情切換邏輯修復 ---
         function loadChapter(chapterNum) {
             playSound('click'); isStoryMode = true; selectedChar = 'nagito'; 
-            if (chapterNum === 1) { storyScript = getProloguePart1(); } 
-            else if (chapterNum === 2) { storyScript = getProloguePart2(); } 
-            else if (chapterNum === 3) { storyScript = getProloguePart3('dummy'); } 
+            if (chapterNum === 1) { storyScript = getPart1(); } 
+            else if (chapterNum === 2) { storyScript = getPart2(); } 
+            else if (chapterNum === 3) { storyScript = getPart3('dummy'); } 
             else if (chapterNum === 4) { storyScript = getChapter1_Part1(); }
             else if (chapterNum === 5) { storyScript = getChapter1_Part2(); } 
             
@@ -506,7 +549,7 @@ er: "", text: "還沒等凪人反應過來，布蕾蒂雅已經毫不客氣地�
             if (selectedBoss === 'cleaner') {
                 showScreen('screen-menu'); return; 
             } else {
-                storyScript = getProloguePart3(selectedBoss); baseStoryLength = storyScript.length;
+                storyScript = getPart3(selectedBoss); baseStoryLength = storyScript.length;
                 currentStoryIndex = 0; showScreen('screen-story'); renderStoryLine();
             }
         }
@@ -724,7 +767,6 @@ er: "", text: "還沒等凪人反應過來，布蕾蒂雅已經毫不客氣地�
             
             if (target.name === "廢墟清掃者" && pendingAction === 'attack') { targetMoving = true; targetMoveDir = 1; }
 
-            // 【重要修復】：明確重置所有狀態，防止上一次防禦的特殊狀態遺留到玩家攻擊回合
             qteType = 'normal'; qteSpeed = 1.2; 
 
             if (pendingAction === 'skill') { player.sp -= skillCost; ui.playerSp.innerText = player.sp; ui.msgBox.innerText = `對 ${enemies[index].name} 施展【破甲擊】！\n(2秒內瘋狂連打集氣！)`; startMashQte(); } 
@@ -734,7 +776,6 @@ er: "", text: "還沒等凪人反應過來，布蕾蒂雅已經毫不客氣地�
             } 
             else if (pendingAction === 'issen') { 
                 player.sp -= 3; ui.playerSp.innerText = player.sp; configureQteZones('issen'); 
-                // 【極限強化】：一閃反應時間降至 0.4 秒 (400ms)
                 setupQteUI("click", "拔刀！", "#e74c3c", `對 ${enemies[index].name} 施展【一閃】！\n(紅光出現瞬間拔刀！極限 0.4秒！)`); startQteAnimation(); 
             } 
             else if (pendingAction === 'moonCombo') { 
@@ -767,7 +808,6 @@ er: "", text: "還沒等凪人反應過來，布蕾蒂雅已經毫不客氣地�
             else if (type === 'aoe_bredeia') { ui.aoeZones[0].style.display = 'block'; ui.aoeZones[0].style.left = '20%'; ui.aoeZones[0].style.backgroundColor = '#2ecc71'; ui.aoeZones[1].style.display = 'block'; ui.aoeZones[1].style.left = '50%'; ui.aoeZones[1].style.backgroundColor = '#2ecc71'; ui.aoeZones[2].style.display = 'block'; ui.aoeZones[2].style.left = '80%'; ui.aoeZones[2].style.backgroundColor = '#2ecc71'; aoeHitStatus = [false, false, false]; aoeHitCount = 0; }
         }
 
-        // 【修復重點】：加入完整防護的 setupQteUI
         function setupQteUI(btnType, btnText, btnColor, msg) { 
             if (ui.qteArea) ui.qteArea.style.display = 'block'; 
             if (ui.msgBox) ui.msgBox.innerText = msg; 
@@ -804,7 +844,6 @@ er: "", text: "還沒等凪人反應過來，布蕾蒂雅已經毫不客氣地�
                     if(!isQteActive) return;
                     issenState = 'active'; ui.mainZone.style.display = 'block'; ui.mainZone.style.left = '45%'; ui.mainZone.style.width = '10%'; ui.mainZone.style.backgroundColor = '#e74c3c';
                     
-                    // 【修改】：一閃反應時間設定為極限 0.4 秒 (400ms)
                     issenReactionTimeout = setTimeout(() => { 
                         if(!isQteActive) return; issenState = 'done'; isQteActive = false; ui.mainZone.style.display = 'none'; checkQteResult(); 
                     }, 400); 
@@ -836,7 +875,6 @@ er: "", text: "還沒等凪人反應過來，布蕾蒂雅已經毫不客氣地�
                     ui.mainZone.style.left = targetStart + '%';
                 }
 
-                // 【創新機制 2：光學迷彩隱形游標】
                 if (qteType === 'invisible') {
                     if (cursorPosition > 25 && cursorPosition < targetStart + targetWidth + 5) {
                         if(ui.qteCursor) ui.qteCursor.style.opacity = '0';
@@ -845,7 +883,6 @@ er: "", text: "還沒等凪人反應過來，布蕾蒂雅已經毫不客氣地�
                     }
                 }
 
-                // 【修復】假動作平滑變速
                 if (qteType === 'fakeout' && !fakeoutTriggered && cursorPosition >= 45 && cursorDirection === 1) { 
                     fakeoutTriggered = true; cancelAnimationFrame(qteReq); 
                     setTimeout(() => { qteSpeed = 2.5; lastTime = 0; if (isQteActive) qteReq = requestAnimationFrame(moveCursor); }, 400); 
@@ -873,7 +910,6 @@ er: "", text: "還沒等凪人反應過來，布蕾蒂雅已經毫不客氣地�
                             isQteActive = false; endMoonCombo(); 
                         } 
                         else if (qteType === 'multihit') { 
-                            // 【多段攻擊統整】：如果沒按到，記錄失敗並繼續
                             mhStats.misses++;
                             mhStats.dmgTaken += currentEnemyAttack.dmg;
                             if (currentEnemyAttack.appliesPoison && !player.poisoned) { player.poisoned = true; updatePlayerStatus(); }
@@ -919,7 +955,6 @@ if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
                 if (hitAny) { aoeHitCount++; } else { playSound('miss'); }
             } 
             else if (pendingAction === 'defend' && qteType === 'multihit') {
-                // 【多段攻擊統整】：點擊時不立刻結算畫面，只記錄數據並進下一發
                 let isPerfect = (cursorPosition >= perfectStart && cursorPosition <= perfectEnd); 
                 let isSuccess = (cursorPosition >= targetStart && cursorPosition <= targetStart + targetWidth);
                 
@@ -943,7 +978,6 @@ if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
             else { isQteActive = false; cancelAnimationFrame(qteReq); checkQteResult(); }
         }
 
-        // 【新增】：多段攻擊統一結算函數
         function finalizeMultiHitDefend() {
             ui.qteArea.style.display = 'none'; ui.mainZone.style.display = 'none';
             let attacker = enemies[activeEnemyIndex];
@@ -1075,7 +1109,6 @@ if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
             }
         }
 
-        // --- 防禦拼刀小遊戲 ---
         function startDefensiveMash() {
             ui.qteArea.style.display = 'none';
             ui.mashArea.style.display = 'block'; mashCount = 0; mashTimeLeft = 2000; isMashing = true; isDefensiveMash = true; 
@@ -1088,7 +1121,6 @@ if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
             }, 50);
         }
         
-        // --- 技能連打與共用 ---
         function startMashQte() { ui.mashArea.style.display = 'block'; mashCount = 0; mashTimeLeft = 2000; isMashing = true; isDefensiveMash = false; ui.mashFill.style.width = '0%'; ui.mashFill.style.backgroundColor = "#9b59b6"; ui.mashTimer.innerText = "2.0 秒"; document.getElementById('mash-btn').innerText = "瘋狂連打！"; document.getElementById('mash-btn').style.backgroundColor = "#9b59b6"; playSound('skill'); mashInterval = setInterval(() => { mashTimeLeft -= 50; ui.mashTimer.innerText = (mashTimeLeft / 1000).toFixed(1) + " 秒"; if (mashTimeLeft <= 0) { clearInterval(mashInterval); isMashing = false; ui.mashTimer.innerText = "時間到！"; setTimeout(checkMashResult, 500); } }, 50); }
         function doMash() { 
             if (!isMashing) return; mashCount++; let fillPercent = Math.min((mashCount / 15) * 100, 100); ui.mashFill.style.width = fillPercent + '%'; 
@@ -1173,7 +1205,6 @@ if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
                     ui.msgBox.innerText = `廢墟清掃者 釋放干擾電波！\n【系統駭入】警告：視覺神經錯亂，游標反轉！`; 
                     setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "防禦！", "#3498db", `逆向攻擊！`); startQteAnimation(); }, 2500); 
                 }
-                // 【替換為新機制】：光學迷彩隱形斬擊
                 else if (chosen === "invisible_strike") { 
                     qteType = 'invisible'; currentEnemyAttack = { name: "隱形斬擊", dmg: 6, appliesPoison: false }; qteSpeed = 1.2; 
                     ui.msgBox.innerText = `廢墟清掃者 啟動光學迷彩！\n警告：游標即將隱形，請憑節奏感防禦！`; 
@@ -1227,4 +1258,10 @@ if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
         }
     </script>
 </body>
+<<<<<<< HEAD
+</html>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <div class="qte-bar" style="width: 90%; max-width: 450px;">
+
+=======
 </html>
+
+>>>>>>> 001bf44c6cda77188d88c736619e83d6c430beba
