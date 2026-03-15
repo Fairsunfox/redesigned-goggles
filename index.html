@@ -26,9 +26,26 @@
         .screen { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 85vh; width: 100%; }
         .screen.active { display: flex; }
         
+        /* 專門給選項過多的選單使用的滾動樣式 */
+        .scrollable-screen {
+            justify-content: flex-start !important; 
+            overflow-y: auto;
+            touch-action: pan-y; 
+            max-height: 95vh;
+            padding-top: 30px;
+            padding-bottom: 50px;
+            -webkit-overflow-scrolling: touch; 
+        }
+        
+        /* 美化滾動條 */
+        .scrollable-screen::-webkit-scrollbar { width: 6px; }
+        .scrollable-screen::-webkit-scrollbar-track { background: transparent; }
+        .scrollable-screen::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
+        .scrollable-screen::-webkit-scrollbar-thumb:hover { background: #aaa; }
+        
         .menu-title { font-size: 36px; color: #ff9f43; margin-bottom: 20px; text-shadow: 0 0 15px #ff9f43; }
-        .menu-subtitle { font-size: 24px; color: #fff; margin-bottom: 30px; }
-        .menu-btn { background-color: #3498db; color: #fff; font-size: 20px; padding: 15px 40px; border-radius: 10px; border: none; margin: 10px; cursor: pointer; transition: transform 0.2s, background-color 0.2s; font-weight: bold; width: 80%; max-width: 300px; }
+        .menu-subtitle { font-size: 24px; color: #fff; margin-bottom: 30px; margin-top: 10px;}
+        .menu-btn { background-color: #3498db; color: #fff; font-size: 20px; padding: 15px 40px; border-radius: 10px; border: none; margin: 10px; cursor: pointer; transition: transform 0.2s, background-color 0.2s; font-weight: bold; width: 80%; max-width: 300px; flex-shrink: 0; }
         .menu-btn:active { transform: scale(0.95); }
         
         .btn-story { background-color: #e67e22; box-shadow: 0 0 10px #e67e22;}
@@ -94,13 +111,20 @@
         #action-btn:active { transform: scale(0.9); }
         #hold-btn:active { transform: scale(0.95); box-shadow: 0 0 15px #f39c12; }
 
-        /* 逃跑小遊戲專屬 */
-        #screen-run { background-color: #1a1a1a; }
+        /* 新增：雙色 QTE 專用按鈕容器 */
+        #dual-btn-container { display: none; justify-content: center; gap: 20px; }
+        .dual-btn { color: #fff; padding: 12px 30px; font-size: 18px; border-radius: 10px; border: 2px solid #fff; font-weight: bold; cursor: pointer; transition: transform 0.1s; }
+        .dual-btn:active { transform: scale(0.9); }
+        #dual-btn-red { background-color: #e74c3c; box-shadow: 0 0 10px #e74c3c; }
+        #dual-btn-blue { background-color: #3498db; box-shadow: 0 0 10px #3498db; }
+
+        /* 逃跑與雷射小遊戲共用/專屬樣式 */
+        .minigame-screen { background-color: #1a1a1a; }
         .run-status-panel { background: rgba(0,0,0,0.8); border: 2px solid #e74c3c; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; margin-bottom: 30px; }
         .run-title { color: #e74c3c; font-size: 22px; margin-top: 0; text-shadow: 0 0 10px #e74c3c; animation: blink 1s infinite;}
         .run-info { font-size: 18px; margin: 10px 0; }
-        #run-btn { background-color: #3498db; color: #fff; padding: 15px 40px; font-size: 20px; border-radius: 10px; font-weight: bold; margin-top: 10px;}
-        #run-btn:active { transform: scale(0.9); }
+        .minigame-btn { background-color: #3498db; color: #fff; padding: 15px 40px; font-size: 20px; border-radius: 10px; font-weight: bold; margin-top: 10px; border: none; cursor: pointer; }
+        .minigame-btn:active { transform: scale(0.9); }
     </style>
 </head>
 <body>
@@ -111,19 +135,23 @@
         <button class="menu-btn btn-boss-mode" onpointerdown="showScreen('screen-char')">⚔️ Boss 挑戰模式</button>
     </div>
 
-    <div id="screen-story-select" class="screen">
+    <div id="screen-story-select" class="screen scrollable-screen">
         <h2 class="menu-subtitle">選擇章節</h2>
         
-        <h3 style="color: #aaa; margin-bottom: 10px; font-size: 18px;">【序章：星空彼方的約定】</h3>
+        <h3 style="color: #aaa; margin-bottom: 10px; font-size: 18px; flex-shrink: 0;">【序章：星空彼方的約定】</h3>
         <button class="menu-btn" style="background-color: #e67e22; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(1)">第一幕：祭典與星之門</button>
         <button class="menu-btn" style="background-color: #d35400; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(2)">第二幕：虛擬訓練</button>
         <button class="menu-btn" style="background-color: #a84300; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(3)">第三幕：冰雪與月兔</button>
         
-        <h3 style="color: #aaa; margin-top: 20px; margin-bottom: 10px; font-size: 18px;">【第一章：永夜之城】</h3>
+        <h3 style="color: #aaa; margin-top: 20px; margin-bottom: 10px; font-size: 18px; flex-shrink: 0;">【第一章：永夜之城】</h3>
         <button class="menu-btn" style="background-color: #8e44ad; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(4)">第一幕：夢境與啟程</button>
         <button class="menu-btn" style="background-color: #9b59b6; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(5)">第二幕：廢墟遭遇戰</button>
+        <button class="menu-btn" style="background-color: #2980b9; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(6)">第三幕：廢棄實驗室</button> 
+        <button class="menu-btn" style="background-color: #1abc9c; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(7)">第四幕：沉寂之心</button>
+        <button class="menu-btn" style="background-color: #16a085; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(8)">第五幕：密室陷阱</button>
+        <button class="menu-btn" style="background-color: #f39c12; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(9)">第六幕：中央都市的交鋒</button>
 
-        <button class="menu-btn btn-back" style="margin-top: 30px;" onpointerdown="showScreen('screen-menu')">返回標題</button>
+        <button class="menu-btn btn-back" style="margin-top: 30px; margin-bottom: 40px;" onpointerdown="showScreen('screen-menu')">返回標題</button>
     </div>
 
     <div id="screen-story" class="screen">
@@ -135,7 +163,7 @@
         </div>
     </div>
 
-    <div id="screen-run" class="screen">
+    <div id="screen-run" class="screen minigame-screen">
         <div class="run-status-panel">
             <h2 class="run-title">🚨 敵襲！清掃者追擊 🚨</h2>
             <div class="run-info">鈴仙凪人 HP: <span id="run-hp" style="color: #ff6b6b; font-weight: bold;">25</span></div>
@@ -146,7 +174,21 @@
             <div class="qte-target-main" id="run-target-zone" style="background-color: #3498db;"></div>
             <div class="qte-cursor" id="run-cursor"></div>
         </div>
-        <button id="run-btn" onpointerdown="checkRunQte()">躲避！</button>
+        <button class="minigame-btn" onpointerdown="checkRunQte()">躲避！</button>
+    </div>
+
+    <div id="screen-laser" class="screen minigame-screen">
+        <div class="run-status-panel" style="border-color: #f39c12;">
+            <h2 class="run-title" style="color: #f39c12; text-shadow: 0 0 10px #f39c12;">⚠️ 致命雷射通道 ⚠️</h2>
+            <div class="run-info">鈴仙凪人 HP: <span id="laser-hp" style="color: #ff6b6b; font-weight: bold;">25</span></div>
+            <div class="run-info">突破進度: <span id="laser-progress" style="color: #2ecc71; font-weight: bold;">0</span> / 5</div>
+            <div id="laser-msg" style="color: #feca57; margin-top: 15px; min-height: 25px;">觀察雷射的間隙... 準備前進！</div>
+        </div>
+        <div class="qte-bar" style="width: 90%; max-width: 450px; background-color: #e74c3c;"> 
+            <div class="qte-target-main" id="laser-target-zone" style="background-color: #2ecc71;"></div> 
+            <div class="qte-cursor" id="laser-cursor"></div>
+        </div>
+        <button class="minigame-btn" style="background-color: #f39c12;" onpointerdown="checkLaserQte()">穿越！</button>
     </div>
 
     <div id="screen-char" class="screen">
@@ -157,12 +199,13 @@
         <button class="menu-btn btn-back" style="margin-top: 30px;" onpointerdown="showScreen('screen-menu')">返回標題</button>
     </div>
 
-    <div id="screen-boss" class="screen">
+    <div id="screen-boss" class="screen scrollable-screen">
         <h2 class="menu-subtitle">選擇討伐目標</h2>
         <button class="menu-btn btn-boss-tutorial" onpointerdown="selectBoss('tutorial')">🔰 新手教學：基礎訓練</button>
         <button class="menu-btn btn-boss-dummy" onpointerdown="selectBoss('dummy')">⚠️ 實戰：訓練人偶 PRO</button>
         <button class="menu-btn btn-boss-mode" style="background-color: #c0392b;" onpointerdown="selectBoss('cleaner')">🤖 廢墟清掃者 (創新變速AI)</button>
-        <button class="menu-btn btn-back" style="margin-top: 30px;" onpointerdown="showScreen('screen-char')">重新選擇角色</button>
+        <button class="menu-btn btn-boss-mode" style="background-color: #8e44ad;" onpointerdown="selectBoss('elite_cleaners')">⚔️ 雙子精英清掃者 (赫爾墨斯派遣)</button>
+        <button class="menu-btn btn-back" style="margin-top: 30px; margin-bottom: 40px;" onpointerdown="showScreen('screen-char')">重新選擇角色</button>
     </div>
 
     <div id="screen-battle" class="screen">
@@ -173,8 +216,7 @@
                 <p style="margin: 5px 0;">HP: <span class="hp-text" id="player-hp">20</span> / <span id="player-max-hp">20</span></p>
                 <p style="margin: 5px 0;">SP: <span class="sp-text" id="player-sp">20</span> / <span id="player-max-sp">20</span></p>
             </div>
-            <div class="enemies-container" id="enemies-area">
-                </div>
+            <div class="enemies-container" id="enemies-area"></div>
         </div>
 
         <div class="ui-panel">
@@ -206,6 +248,11 @@
                 </div>
                 <button id="action-btn" onpointerdown="checkQte()">動作！</button>
                 <button id="hold-btn" onpointerdown="startHoldQte(event)" onpointerup="endHoldQte(event)" onpointerleave="endHoldQte(event)" style="display:none;">按住蓄力！</button>
+                
+                <div id="dual-btn-container">
+                    <button class="dual-btn" id="dual-btn-red" onpointerdown="checkDualQte('red')">紅！</button>
+                    <button class="dual-btn" id="dual-btn-blue" onpointerdown="checkDualQte('blue')">藍！</button>
+                </div>
             </div>
 
             <div id="mash-area">
@@ -224,7 +271,7 @@
         bgm.volume = 0.5;
 
         function changeBGM(bossType) {
-            let trackName = (bossType === 'cleaner') ? 'bgm2.mp3' : 'bgm.mp3';
+            let trackName = (bossType === 'cleaner' || bossType === 'elite_cleaners') ? 'bgm2.mp3' : 'bgm.mp3';
             if (!bgm.src.endsWith(trackName)) {
                 bgm.src = trackName;
                 bgm.load();
@@ -237,7 +284,7 @@
         function playSound(type) { if(sfx[type]) { sfx[type].currentTime = 0; sfx[type].play().catch(e => {}); } }
 
         // ==========================================
-        // 📖 動態劇本資料庫系統 (加入無縫跳轉)
+        // 📖 動態劇本資料庫系統 
         // ==========================================
         function getPart1() {
             return [
@@ -277,7 +324,6 @@
                 { speaker: "布蕾蒂雅", text: "誰知道呢？但至少……你未來的人生經歷會變得非常豐富喔。", bg: "#0a0a2a" },
                 { speaker: "鈴仙凪人", text: "喔。", bg: "#0a0a2a" },
                 { speaker: "布蕾蒂雅", text: "雖然我很想立刻讓你開始身為紀錄者的旅行，但看在你剛經歷那起事件的份上，我建議你先好好休息吧。", bg: "#0a0a2a" },
-                // 【加入無縫跳轉機制】：自動接續第二幕
                 { speaker: "", text: "（休息片刻後...）", bg: "#000", textColor: "#aaa", nextChapter: 2 }
             ];
         }
@@ -296,7 +342,7 @@
             let reviewLine = "";
             if (bossDefeated === 'tutorial') { reviewLine = "表現得一般般吧，但勉強還在可接受的範圍內。"; } 
             else if (bossDefeated === 'dummy') { reviewLine = "乾脆俐落。看來你已經完全準備好了。"; }
-            else { reviewLine = "沒想到你居然能活著回來。"; } // Fallback
+            else { reviewLine = "沒想到你居然能活著回來。"; } 
 
             return [
                 { speaker: "布蕾蒂雅", text: reviewLine, bg: "#0a0a2a" },
@@ -306,7 +352,6 @@
                 { speaker: "", text: "（布蕾蒂雅完全無視凪人的抗議，直接一腳將他踹進了星之門）", bg: "#000" },
                 { speaker: "布蕾蒂雅", text: "希望你的第一次旅途一切順利……不過，大概是不會太順利啦。", bg: "#000" },
                 
-                // 雪地場景
                 { speaker: "鈴仙凪人", text: "咳……咳咳！可惡，那個叫布蕾蒂雅的傢伙，居然直接把我踹進來……這到底是什麼鬼地方？", bg: "#e0e6ed", textColor: "#2c3e50" },
                 { speaker: "", text: "四周白茫茫的一片，狂風夾雜著暴雪，氣溫低得彷彿連血液都要凍結。", bg: "#e0e6ed", textColor: "#2c3e50" },
                 { speaker: "鈴仙凪人", text: "（不行……失溫太嚴重了……感覺隨時都會倒下……）", bg: "#e0e6ed", textColor: "#2c3e50" },
@@ -314,7 +359,6 @@
                 { speaker: "", text: "在他意識即將徹底陷入黑暗的最後一刻——\n（叮鈴……叮鈴……）", bg: "#e0e6ed", textColor: "#2c3e50" },
                 { speaker: "", text: "他隱約聽見了，某種清脆的鈴鐺聲正在朝他緩緩靠近。\n隨後，鈴仙凪人徹底失去了意識。", bg: "#000", textColor: "#fff" },
                 
-                // 圖書館場景
                 { speaker: "", text: "（溫暖的觸感包裹著身體，耳邊傳來劈啪作響的柴火聲。）", bg: "#3e2723" },
                 { speaker: "", text: "再次睜開眼時，凪人發現自己回到了彼岸的圖書館。他正舒服地躺在沙發上，享受著壁爐帶來的溫度。", bg: "#3e2723" },
                 { speaker: "布蕾蒂雅", text: "喲，醒來啦？", bg: "#3e2723" },
@@ -376,6 +420,139 @@
             }
         ];}
 
+        function getChapter1_Part3() { return [
+            { speaker: "鈴仙凪人", text: "呼……終於結束了嗎？", bg: "#1c1c1c" },
+            { speaker: "", text: "鈴仙月兔上前查看清掃者的狀態，用後腿踢了踢它幾下。\n發現沒動靜後，便跳回到了凪人身旁。", bg: "#1c1c1c" },
+            { speaker: "鈴仙凪人", text: "走吧，離開這個鬼地方。", bg: "#1c1c1c" },
+            { speaker: "", text: "但就在這時，身後的清掃者突然發出了動靜。\n它還沒有徹底報廢，殘破的機體正掙扎著重新站起身。", bg: "#1c1c1c" },
+            { speaker: "鈴仙凪人", text: "不好！", bg: "#300", textColor: "#ff6b6b" },
+            { speaker: "", text: "現在這種情況，他已經來不及閃避了。", bg: "#300" },
+            { speaker: "", text: "——砰！\n就在這時，一聲槍響傳來。", bg: "#fff", textColor: "#000" },
+            { speaker: "", text: "子彈精準地命中了清掃者防禦最薄弱的地方。", bg: "#1c1c1c" },
+            { speaker: "", text: "清掃者這下是真的報廢了，徹底失去機能，倒在地上。", bg: "#1c1c1c" },
+            { speaker: "", text: "還不等凪人從震驚中回過神，一道陌生的女聲傳來。", bg: "#1c1c1c" },
+            { speaker: "？？？", text: "是沒見過的生面孔呢。\n在這種地方，居然還會有人存在。", bg: "#1c1c1c" },
+            { speaker: "鈴仙凪人", text: "妳是誰？", bg: "#1c1c1c" },
+            { speaker: "？？？", text: "在讓別人說出自己的名字前，不應該先自報家門嗎？", bg: "#1c1c1c" },
+            { speaker: "鈴仙凪人", text: "妳很可疑。", bg: "#1c1c1c" },
+            { speaker: "？？？", text: "你同樣也很可疑喔。\n不如……我們來握手吧。", bg: "#1c1c1c" },
+            { speaker: "鈴仙凪人", text: "我憑什麼要和妳握手？", bg: "#1c1c1c" },
+            { speaker: "？？？", text: "就憑我剛剛救了你。", bg: "#1c1c1c" },
+            { speaker: "", text: "凪人自知理虧，嘆了口氣，還是伸出手握住對方。", bg: "#1c1c1c" },
+            { speaker: "", text: "但是，雙手相握的瞬間，他突然感到一陣強烈的暈眩。", bg: "#1c1c1c" },
+            { speaker: "鈴仙凪人", text: "唔……妳做了什麼？", bg: "#000" },
+            { speaker: "？？？", text: "只是為了讓你能夠更好地對話罷了。", bg: "#000" },
+            { speaker: "", text: "接著，凪人便失去了意識，倒了下去。", bg: "#000" },
+            { speaker: "", text: "（數小時後...）", bg: "#000", textColor: "#aaa", nextChapter: 6 }
+        ];}
+
+        function getChapter1_Part4() { return [
+            { speaker: "", text: "（凪人在一個陌生的地方緩緩睜開眼睛。）", bg: "#1a252c" },
+            { speaker: "", text: "這裡看起來像是一處廢棄的實驗室，但周圍的生活痕跡顯示，這裡依然有人居住。", bg: "#1a252c" },
+            { speaker: "？？？", text: "你醒了？", bg: "#1a252c" },
+            { speaker: "鈴仙凪人", text: "妳這傢伙，對我做了什麼？！", bg: "#1a252c" },
+            { speaker: "？？？", text: "別緊張，我什麼事情都沒對你做。\n現在，我們可以繼續剛剛的話題了。", bg: "#1a252c" },
+            { speaker: "？？？", text: "你是誰？", bg: "#1a252c" },
+            { speaker: "", text: "凪人眼見眼前這女人毫不講理，但自己現在又處於劣勢鬥不過她，只好乖乖回答。", bg: "#1a252c" },
+            { speaker: "鈴仙凪人", text: "……鈴仙凪人。那傢伙是鈴仙月兔。", bg: "#1a252c" },
+            { speaker: "", text: "凪人瞥見一旁的鈴仙月兔，牠也被這位女人一起帶過來了，正縮在角落。", bg: "#1a252c" },
+            { speaker: "？？？", text: "不錯，我喜歡這麼老實的人。", bg: "#1a252c" },
+            { speaker: "艾拉露恩", text: "我的名字是艾拉露恩。", bg: "#1a252c" },
+            { speaker: "鈴仙凪人", text: "所以妳剛剛到底對我做了什麼？", bg: "#1a252c" },
+            { speaker: "艾拉露恩", text: "我對你下藥了。", bg: "#1a252c" },
+            { speaker: "鈴仙凪人", text: "？", bg: "#1a252c" },
+            { speaker: "艾拉露恩", text: "你大概在十天之內就會因為毒發而死。若你還想活著，就得在我手下賣力工作。", bg: "#1a252c" },
+            { speaker: "鈴仙凪人", text: "初次見面就這樣對待，妳好誇張喔。", bg: "#1a252c" },
+            { speaker: "艾拉露恩", text: "在我確認你是否值得相信之前，只能先用這種方式約束你了。", bg: "#1a252c" },
+            { speaker: "", text: "【第一章：永夜之城 —— 第三幕 完】\n(點擊螢幕可進入下一幕)", bg: "#1a1a2e", nextChapter: 7 }
+        ];}
+
+        function getChapter1_Part5() { return [
+            { speaker: "鈴仙凪人", text: "艾拉露恩那傢伙，要我去找那什麼『沉寂之心』，說是需要那個東西對抗赫爾墨斯⋯⋯", bg: "#1a252c" },
+            { speaker: "鈴仙凪人", text: "不過，為什麼事情會變成這樣啊？！", bg: "#300", textColor: "#ff6b6b" },
+            { speaker: "", text: "凪人與鈴仙月兔此刻正身處於一條狹窄的通道內，四周密佈著致命的紅色雷射光束。", bg: "#300" },
+            { speaker: "", text: "（時間回到幾小時前……）", bg: "#000", textColor: "#aaa" },
+            { speaker: "艾拉露恩", text: "聽好了鈴仙凪人，你知道這個世界是個被黑夜籠罩的城市吧？\n而這一切的罪魁禍首，便是佔據中央塔樓的『赫爾墨斯』。", bg: "#1a252c" },
+            { speaker: "艾拉露恩", text: "那傢伙可不是能夠隨便對付的。為了擊敗她，我需要取回曾經研發的一個道具——『沉寂之心』。", bg: "#1a252c" },
+            { speaker: "艾拉露恩", text: "鈴仙凪人，就由你來替我把它取回。", bg: "#1a252c" },
+            { speaker: "", text: "（時間回到現在……）", bg: "#000", textColor: "#aaa" },
+            { speaker: "鈴仙凪人", text: "那傢伙真是討人厭，居然把這種苦差事丟給我。", bg: "#300" },
+            { speaker: "系統", text: "【突發事件：穿越致命雷射網！】\n看準綠色安全區前進，避免觸發高溫雷射！", bg: "#111", action: "laser_minigame" }
+        ];}
+
+        function getChapter1_Part6() { return [
+            { speaker: "鈴仙凪人", text: "呼... 總算是活著過來了。這到底是什麼鬼防禦系統？", bg: "#1c1c1c" },
+            { speaker: "鈴仙月兔", text: "啾啾！", bg: "#1c1c1c" },
+            { speaker: "", text: "（成功穿越了危險的雷射通道後，凪人與鈴仙月兔來到了存放『沉寂之心』的房間門前。）", bg: "#1c1c1c" },
+            { speaker: "", text: "出乎意料的是，這裡的大門居然是敞開的，就好像在刻意歡迎他們進去一樣。", bg: "#1c1c1c" },
+            { speaker: "鈴仙凪人", text: "……太安靜了。簡直就像個陷阱。", bg: "#1c1c1c" },
+            { speaker: "", text: "雖然心中充滿疑慮，但為了達成目的，凪人與月兔還是小心翼翼地走進了房間。", bg: "#2c3e50" },
+            { speaker: "", text: "就在凪人伸手，打算就這樣取走台座上的『沉寂之心』時——", bg: "#2c3e50" },
+            { speaker: "", text: "——砰！\n身後的金屬大門突然毫無預警地重重關上。", bg: "#000", textColor: "#ff6b6b" },
+            { speaker: "", text: "伴隨著一陣『嘶嘶』聲，四周的牆壁縫隙開始溢出某種刺鼻的未知氣體。", bg: "#2e4053" },
+            { speaker: "鈴仙凪人", text: "糟了！果不其然是陷阱！", bg: "#2e4053" },
+            { speaker: "", text: "察覺情況不妙，凪人眼疾手快，一把將台座上的『沉寂之心』扯了下來，塞進懷裡。", bg: "#2e4053" },
+            { speaker: "", text: "接著他迅速環顧四周，尋找逃生的路線。\n很快地，他的目光鎖定在天花板角落的一個通風口上。", bg: "#2e4053" },
+            { speaker: "鈴仙凪人", text: "鈴仙月兔！把那個通風口的百葉窗踹開！", bg: "#2e4053" },
+            { speaker: "鈴仙月兔", text: "啾啾！", bg: "#2e4053" },
+            { speaker: "", text: "（月兔用力一蹬，精準的飛踢瞬間將通風口的鐵柵欄踹得粉碎。）", bg: "#2e4053" },
+            { speaker: "", text: "在氣體徹底瀰漫整個房間之前，一人一兔迅速鑽進了狹窄的通風管道中……", bg: "#000" },
+            { speaker: "", text: "（數小時後...）", bg: "#000", textColor: "#aaa", nextChapter: 9 }
+        ];}
+
+        function getChapter1_Part7() { return [
+            { speaker: "", text: "（不久後，凪人帶著『沉寂之心』回到了實驗室。）", bg: "#1a252c" },
+            { speaker: "艾拉露恩", text: "嗯，做得很好，鈴仙凪人。", bg: "#1a252c" },
+            { speaker: "鈴仙凪人", text: "妳做的這一切究竟是為了什麼？", bg: "#1a252c" },
+            { speaker: "艾拉露恩", text: "我想奪回白晝，回到『自由』的時光。", bg: "#1a252c" },
+            { speaker: "艾拉露恩", text: "在我解析完畢沉寂之心之前，你可以去中央都市逛逛。", bg: "#1a252c" },
+            { speaker: "鈴仙凪人", text: "明知道那裡是赫爾墨斯的根據地，卻還要我過去？", bg: "#1a252c" },
+            { speaker: "艾拉露恩", text: "你是「變數」，她不敢對你怎麼樣的。", bg: "#1a252c" },
+            { speaker: "", text: "凪人懶得和艾拉露恩爭執，便帶上鈴仙月兔去了中央都市。", bg: "#1a252c" },
+            { speaker: "", text: "（中央都市的街道上...）", bg: "#111", textColor: "#aaa" },
+            { speaker: "", text: "凪人和鈴仙月兔來到了中央都市，這裡的人們看起來就像是個失去自主能力的人偶，只會按照固定的方式行走和做事。", bg: "#0a0a1a" },
+            { speaker: "鈴仙凪人", text: "真是無可救藥了。", bg: "#0a0a1a" },
+            { speaker: "", text: "就在這時，一道清冷的機械聲音響起。", bg: "#0a0a1a" },
+            { speaker: "？？？", text: "鈴仙凪人⋯⋯來自異世界的變數。", bg: "#0a0a1a" },
+            { speaker: "", text: "凪人回頭望去，只見眼前是個白髮紅瞳的女子，不，她並不是人。", bg: "#0a0a1a" },
+            { speaker: "", text: "而是一個由數據構成的身體。", bg: "#0a0a1a" },
+            { speaker: "鈴仙凪人", text: "看來，妳似乎並不想待在幕後看著，赫爾墨斯。", bg: "#0a0a1a" },
+            { speaker: "赫爾墨斯", text: "我必須確保「變數」不會對我的規劃造成影響。", bg: "#0a0a1a" },
+            { speaker: "赫爾墨斯", text: "我知道艾拉露恩那傢伙對你下了藥，迫使你必須服從她，而我剛好有解藥。", bg: "#0a0a1a" },
+            { speaker: "赫爾墨斯", text: "和那個女人合作對你是沒有好處的，我可以保證。", bg: "#0a0a1a" },
+            { speaker: "鈴仙凪人", text: "聽起來妳好像很瞭解她？", bg: "#0a0a1a" },
+            { speaker: "赫爾墨斯", text: "就憑我與她曾經是合作夥伴。", bg: "#0a0a1a" },
+            { speaker: "鈴仙凪人", text: "（合作夥伴！？艾拉露恩從來沒說過這件事……）", bg: "#0a0a1a" },
+            { speaker: "", text: "赫爾墨斯這時拿出了一管解藥遞給凪人。", bg: "#0a0a1a" },
+            { speaker: "赫爾墨斯", text: "當你收下的那一刻，你將會獲得真正的「自由」。", bg: "#0a0a1a" },
+            { speaker: "鈴仙凪人", text: "那妳又該如何保證這個解藥真的是解藥呢？", bg: "#0a0a1a" },
+            { speaker: "赫爾墨斯", text: "騙你對我沒有好處。", bg: "#0a0a1a" },
+            { speaker: "系統", text: "是否要收下赫爾墨斯的解藥？", bg: "#1a1a2e", choices: [
+                { text: "答應 (收下解藥)", valid: true, nextChapter: 10 },
+                { text: "不答應 (拒絕提議)", valid: true, nextChapter: 11 }
+            ]}
+        ];}
+
+        function getChapter1_BadEnd() { return [
+            { speaker: "赫爾墨斯", text: "很高興你願意接受我的提議。", bg: "#0a0a1a" },
+            { speaker: "", text: "（凪人接過解藥並飲下，但隨即感覺到意識逐漸模糊……）", bg: "#000" },
+            { speaker: "鈴仙凪人", text: "這……根本不是解藥……", bg: "#000", textColor: "#ff6b6b" },
+            { speaker: "", text: "那解藥果然有問題。鈴仙凪人最後也成為了被赫爾墨斯操控著的人偶。", bg: "#000" },
+            { speaker: "", text: "在這個永夜之城度過了一輩子……", bg: "#000" },
+            { speaker: "系統", text: "【BAD END：虛假的自由】\n(點擊螢幕回到主選單)", bg: "#300", textColor: "#ff6b6b" } 
+        ];}
+
+        function getChapter1_Part8() { return [
+            { speaker: "鈴仙凪人", text: "抱歉，比起妳，我更相信我自己。", bg: "#0a0a1a" },
+            { speaker: "赫爾墨斯", text: "是嗎？那還真是可惜了。", bg: "#0a0a1a" },
+            { speaker: "赫爾墨斯", text: "若你能夠從這兩個清掃者中活下來，就在下次的見面交鋒吧。", bg: "#0a0a1a" },
+            { speaker: "", text: "（赫爾墨斯的身影化作數據消散，取而代之的是兩台散發著危險紅光的精英清掃者！）", bg: "#1c1c1c" },
+            { speaker: "系統", text: "【切換戰鬥模式：對決 雙子精英清掃者】", bg: "#900", choices: [
+                { text: "鈴仙凪人 (拔刀迎擊)", valid: true, boss: "elite_cleaners", char: "nagito" },
+                { text: "鈴仙月兔 (飛踢出擊)", valid: true, boss: "elite_cleaners", char: "tsukito" }
+            ]}
+        ];}
+
         let storyScript = []; let baseStoryLength = 0;
         let currentStoryIndex = 0; let isTyping = false; let typeTimer; let fullText = "";
 
@@ -406,7 +583,11 @@
         let isDefensiveMash = false; 
         let mhStats = { perfects: 0, successes: 0, misses: 0, dmgTaken: 0, counterTriggered: false };
         let fakeoutTriggered = false, multiHitCurrent = 0, multiHitMax = 1, currentEnemyAttack = {}; let comboCount = 0, isHolding = false;
+        
+        let dualCursorsData = []; 
         let runProgress = 0, runMax = 10, runPlayerHp = 25;
+        let laserProgress = 0, laserMax = 5, laserPlayerHp = 25;
+
         let isMashing = false, mashCount = 0, mashTimeLeft = 2000, mashInterval;
 
         function showScreen(screenId) { 
@@ -415,7 +596,6 @@
             document.getElementById(screenId).classList.add('active'); 
         }
 
-        // --- 劇情切換邏輯修復 ---
         function loadChapter(chapterNum) {
             playSound('click'); isStoryMode = true; selectedChar = 'nagito'; 
             if (chapterNum === 1) { storyScript = getPart1(); } 
@@ -423,13 +603,27 @@
             else if (chapterNum === 3) { storyScript = getPart3('dummy'); } 
             else if (chapterNum === 4) { storyScript = getChapter1_Part1(); }
             else if (chapterNum === 5) { storyScript = getChapter1_Part2(); } 
+            else if (chapterNum === 6) { storyScript = getChapter1_Part4(); } 
+            else if (chapterNum === 7) { storyScript = getChapter1_Part5(); } 
+            else if (chapterNum === 8) { storyScript = getChapter1_Part6(); } 
+            else if (chapterNum === 9) { storyScript = getChapter1_Part7(); } 
+            else if (chapterNum === 10) { storyScript = getChapter1_BadEnd(); } 
+            else if (chapterNum === 11) { storyScript = getChapter1_Part8(); } 
             
             baseStoryLength = storyScript.length; currentStoryIndex = 0; showScreen('screen-story'); renderStoryLine();
         }
 
         function resumeStoryAfterBattle() {
             if (selectedBoss === 'cleaner') {
-                showScreen('screen-menu'); return; 
+                storyScript = getChapter1_Part3(); baseStoryLength = storyScript.length;
+                currentStoryIndex = 0; showScreen('screen-story'); renderStoryLine();
+            } else if (selectedBoss === 'elite_cleaners') {
+                storyScript = [
+                    { speaker: "鈴仙凪人", text: "總算解決了……不過，赫爾墨斯那傢伙到底有什麼盤算？", bg: "#1c1c1c" },
+                    { speaker: "", text: "【第一章：永夜之城 —— 待續】\n(點擊螢幕返回主選單)", bg: "#1a1a2e" }
+                ];
+                baseStoryLength = storyScript.length;
+                currentStoryIndex = 0; showScreen('screen-story'); renderStoryLine();
             } else {
                 storyScript = getPart3(selectedBoss); baseStoryLength = storyScript.length;
                 currentStoryIndex = 0; showScreen('screen-story'); renderStoryLine();
@@ -438,8 +632,8 @@
 
         function renderStoryLine() {
             if (currentStoryIndex >= storyScript.length) {
-                if (storyScript[storyScript.length - 1].text.includes("完】") || storyScript[storyScript.length - 1].text.includes("啟程】")) { 
-                    setTimeout(() => { showScreen('screen-menu'); }, 300); // 防誤觸保護
+                if (storyScript[storyScript.length - 1].text.includes("完】") || storyScript[storyScript.length - 1].text.includes("啟程】") || storyScript[storyScript.length - 1].text.includes("待續】") || storyScript[storyScript.length - 1].text.includes("BAD END")) { 
+                    setTimeout(() => { showScreen('screen-menu'); }, 300); 
                     return; 
                 } 
                 else { changeBGM(selectedBoss); startBattle(); return; }
@@ -447,8 +641,8 @@
             
             let line = storyScript[currentStoryIndex];
             if (line.action === 'run_minigame') { changeBGM('cleaner'); startRunMinigame(); return; }
-
-            // 【加入無縫跳轉判定】：如果這段台詞有指定跳轉章節，就直接載入該章節！
+            if (line.action === 'laser_minigame') { changeBGM('tutorial'); startLaserMinigame(); return; }
+            
             if (line.nextChapter) { loadChapter(line.nextChapter); return; }
 
             document.getElementById('screen-story').style.backgroundColor = line.bg;
@@ -484,6 +678,9 @@
         function chooseOption(e, idx) { 
             e.stopPropagation(); playSound('click'); ui.storyChoices.style.display = 'none'; 
             let choice = storyScript[currentStoryIndex].choices[idx];
+            
+            if (choice.nextChapter) { loadChapter(choice.nextChapter); return; }
+
             while (storyScript.length > baseStoryLength) { storyScript.pop(); } 
 
             if (choice.char) selectedChar = choice.char; 
@@ -492,12 +689,12 @@
             if (choice.boss === 'tutorial') { storyScript.push({ speaker: "布蕾蒂雅", text: "哼，果然還是個菜鳥。那就從最基礎的開始吧！", bg: "#0a0a2a" }); } 
             else if (choice.boss === 'dummy') { storyScript.push({ speaker: "布蕾蒂雅", text: "真的假的，那就讓我看看你的實力吧！", bg: "#0a0a2a" }); }
             else if (choice.boss === 'cleaner') { storyScript.push({ speaker: "系統", text: `【切換戰鬥模式：對決 廢墟清掃者】\n出戰角色：${charData[selectedChar].name}`, bg: "#900" }); }
+            else if (choice.boss === 'elite_cleaners') { storyScript.push({ speaker: "系統", text: `【強敵戰鬥：對決 雙子精英清掃者】\n出戰角色：${charData[selectedChar].name}`, bg: "#900" }); }
             
             currentStoryIndex++; renderStoryLine(); 
         }
         function rejectOption(e) { e.stopPropagation(); playSound('miss'); }
 
-        // --- 逃亡小遊戲 ---
         function startRunMinigame() {
             showScreen('screen-run'); runProgress = 0; runPlayerHp = 25;
             document.getElementById('run-hp').innerText = runPlayerHp; document.getElementById('run-progress').innerText = runProgress; document.getElementById('run-msg').innerText = "清掃者發起了攻擊！\n準備閃避！";
@@ -530,6 +727,55 @@
                 playSound('miss'); runPlayerHp -= 3; document.getElementById('run-hp').innerText = Math.max(0, runPlayerHp); document.getElementById('run-msg').innerText = "💥 閃避失敗！受到 3 點傷害！";
                 if (runPlayerHp <= 0) { document.getElementById('run-msg').innerText = "體力耗盡... 鈴仙凪人倒下了。\n(2秒後重新開始)"; bgm.pause(); setTimeout(startRunMinigame, 2500); } 
                 else { runProgress++; document.getElementById('run-progress').innerText = runProgress; setTimeout(nextRunAttack, 1500); }
+            }
+        }
+
+        function startLaserMinigame() {
+            showScreen('screen-laser'); laserProgress = 0; laserPlayerHp = 25; 
+            document.getElementById('laser-hp').innerText = laserPlayerHp; document.getElementById('laser-progress').innerText = laserProgress; document.getElementById('laser-msg').innerText = "觀察雷射的間隙... 準備前進！";
+            document.getElementById('laser-target-zone').style.display = 'none'; document.getElementById('laser-cursor').style.display = 'none'; setTimeout(nextLaserStep, 1500);
+        }
+        function nextLaserStep() {
+            if (laserProgress >= laserMax) {
+                document.getElementById('laser-msg').innerText = "成功穿越了雷射通道！"; playSound('skill');
+                setTimeout(() => { loadChapter(8); }, 2000); return;
+            }
+            document.getElementById('laser-msg').innerText = `前方出現高溫雷射網！(第 ${laserProgress + 1} 層)`;
+            qteSpeed = 1.2 + Math.random() * 1.5; 
+            targetWidth = 10 + Math.random() * 10; 
+            targetStart = 10 + Math.random() * (100 - targetWidth - 20); 
+            let zone = document.getElementById('laser-target-zone'); zone.style.display = 'block'; zone.style.left = targetStart + '%'; zone.style.width = targetWidth + '%';
+            cursorPosition = 0; cursorDirection = 1; let cursor = document.getElementById('laser-cursor'); cursor.style.display = 'block'; cursor.style.left = '0%'; isQteActive = true;
+            
+            let lastTime = 0;
+            function laserLoop(currentTime) {
+                if (!isQteActive) return;
+                if (!lastTime) { lastTime = currentTime; qteReq = requestAnimationFrame(laserLoop); return; }
+                let dt = currentTime - lastTime; lastTime = currentTime; if (dt > 50) dt = 16.66;
+                
+                cursorPosition += (qteSpeed * (dt / 16.66) * cursorDirection); 
+                if (cursorPosition >= 100) { cursorPosition = 100; cursorDirection = -1; }
+                else if (cursorPosition <= 0) { cursorPosition = 0; cursorDirection = 1; }
+                
+                cursor.style.left = cursorPosition + '%';
+                qteReq = requestAnimationFrame(laserLoop);
+            }
+            qteReq = requestAnimationFrame(laserLoop);
+        }
+        function checkLaserQte() { 
+            if (!isQteActive) return; 
+            isQteActive = false; cancelAnimationFrame(qteReq); 
+            let isSuccess = (cursorPosition >= targetStart && cursorPosition <= targetStart + targetWidth); 
+            processLaserResult(isSuccess); 
+        }
+        function processLaserResult(isSuccess) {
+            document.getElementById('laser-target-zone').style.display = 'none'; document.getElementById('laser-cursor').style.display = 'none';
+            if (isSuccess) { 
+                playSound('guard'); laserProgress++; document.getElementById('laser-progress').innerText = laserProgress; document.getElementById('laser-msg').innerText = "💫 抓準時機！安全通過！"; setTimeout(nextLaserStep, 1000);
+            } else {
+                playSound('miss'); laserPlayerHp -= 5; document.getElementById('laser-hp').innerText = Math.max(0, laserPlayerHp); document.getElementById('laser-msg').innerText = "💥 觸碰雷射！受到 5 點高溫傷害！";
+                if (laserPlayerHp <= 0) { document.getElementById('laser-msg').innerText = "凪人被烤焦了...\n(2秒後重新開始)"; bgm.pause(); setTimeout(startLaserMinigame, 2500); } 
+                else { setTimeout(nextLaserStep, 1500); }
             }
         }
 
@@ -567,6 +813,12 @@
                 enemies = [ { id: 0, name: "訓練人偶PRO", hp: 50, maxHp: 50, attack: 4, shield: false, isAlive: true, isCharging: false, lastMove: "" }, { id: 1, name: "無人機僕從", hp: 15, maxHp: 15, attack: 2, shield: false, isAlive: true, isCharging: false, lastMove: "" } ];
             } else if (selectedBoss === 'cleaner') {
                 enemies = [ { id: 0, name: "廢墟清掃者", hp: 60, maxHp: 60, attack: 5, shield: false, isAlive: true, isCharging: false, lastMove: "" } ];
+            } else if (selectedBoss === 'elite_cleaners') {
+                // 【精英難度下調，增加容錯率】
+                enemies = [ 
+                    { id: 0, name: "精英清掃者 Alpha", hp: 45, maxHp: 45, attack: 5, shield: false, isAlive: true, isCharging: false, lastMove: "" },
+                    { id: 1, name: "精英清掃者 Beta", hp: 45, maxHp: 45, attack: 5, shield: false, isAlive: true, isCharging: false, lastMove: "" }
+                ];
             }
 
             enemies.forEach(e => {
@@ -583,6 +835,7 @@
 
             if (selectedBoss === 'tutorial') { ui.msgBox.innerText = `【基礎教學程序啟動】\n請熟悉戰禦與攻擊的 QTE 節奏。\n輪到 ${player.name} 行動。`; } 
             else if (selectedBoss === 'cleaner') { ui.msgBox.innerText = `無路可退！對決 廢墟清掃者！\n(警告：這台機器充滿了不穩定的故障！)\n輪到 ${player.name} 行動。`; }
+            else if (selectedBoss === 'elite_cleaners') { ui.msgBox.innerText = `赫爾墨斯派出的兩台【精英清掃者】！\n(警告：對方擁有極高的攻擊頻率與破壞力！)\n輪到 ${player.name} 行動。`; }
             else if (isStoryMode) { ui.msgBox.innerText = `【進階實戰程序啟動】\n讀取紀錄者戰鬥數據...\n輪到 ${player.name} 行動。`; }
             else { ui.msgBox.innerText = `戰鬥開始！輪到 ${player.name} 行動。`; }
             
@@ -650,7 +903,7 @@
             playSound('click'); currentTargetIndex = index; ui.targetMenu.style.display = 'none';
             targetMoving = false; 
             
-            if (target.name === "廢墟清掃者" && pendingAction === 'attack') { targetMoving = true; targetMoveDir = 1; }
+            if (target.name.includes("清掃者") && pendingAction === 'attack') { targetMoving = true; targetMoveDir = 1; }
 
             qteType = 'normal'; qteSpeed = 1.2; 
 
@@ -676,13 +929,15 @@
         }
 
         function configureQteZones(type) {
+            // 【重要修復】：確保不論哪個招式，基礎的游標一定要顯示
+            if(ui.qteCursor) { ui.qteCursor.style.display = 'block'; ui.qteCursor.style.opacity = '1'; ui.qteCursor.style.backgroundColor = '#fff'; ui.qteCursor.style.boxShadow = '0 0 5px #fff'; }
+            
             if(ui.mainZone) ui.mainZone.style.display = 'none'; 
             if(ui.perfectZone) ui.perfectZone.style.display = 'none'; 
             if(ui.aoeZones) ui.aoeZones.forEach(z => { if(z) { z.style.display = 'none'; z.style.backgroundColor = '#2ecc71'; z.style.width = '10%'; }});
             
-            let c2 = document.getElementById('qte-cursor-2'); if(c2) c2.style.display = 'none'; 
-            let c3 = document.getElementById('qte-cursor-3'); if(c3) c3.style.display = 'none'; 
-            if(ui.qteCursor) { ui.qteCursor.style.display = 'block'; ui.qteCursor.style.opacity = '1'; }
+            let c2 = document.getElementById('qte-cursor-2'); if(c2) { c2.style.display = 'none'; c2.style.backgroundColor = '#fff'; c2.style.boxShadow = '0 0 5px #fff'; }
+            let c3 = document.getElementById('qte-cursor-3'); if(c3) { c3.style.display = 'none'; c3.style.backgroundColor = '#fff'; c3.style.boxShadow = '0 0 5px #fff'; }
 
             if (type === 'attack') { targetStart = 70; targetWidth = 20; perfectStart = -1; perfectEnd = -1; ui.mainZone.style.left = targetStart + '%'; ui.mainZone.style.width = targetWidth + '%'; ui.mainZone.style.backgroundColor = '#2ecc71'; ui.mainZone.style.display = 'block'; } 
             else if (type === 'safeSlash') { targetStart = 75; targetWidth = 15; perfectStart = -1; perfectEnd = -1; ui.mainZone.style.left = targetStart + '%'; ui.mainZone.style.width = targetWidth + '%'; ui.mainZone.style.backgroundColor = '#3498db'; ui.mainZone.style.display = 'block'; aoeHitCount = 0; } 
@@ -690,6 +945,14 @@
             else if (type === 'moonCombo') { qteSpeed = 1.2; targetStart = 65; targetWidth = 25; perfectStart = -1; perfectEnd = -1; ui.mainZone.style.left = targetStart + '%'; ui.mainZone.style.width = targetWidth + '%'; ui.mainZone.style.backgroundColor = '#2ecc71'; ui.mainZone.style.display = 'block'; } 
             else if (type === 'moonHold') { targetStart = 70; targetWidth = 25; perfectStart = 80; perfectEnd = 88; ui.mainZone.style.left = targetStart + '%'; ui.mainZone.style.width = targetWidth + '%'; ui.mainZone.style.backgroundColor = '#2ecc71'; ui.mainZone.style.display = 'block'; ui.perfectZone.style.left = perfectStart + '%'; ui.perfectZone.style.width = (perfectEnd - perfectStart) + '%'; ui.perfectZone.style.backgroundColor = '#f1c40f'; ui.perfectZone.style.display = 'block'; } 
             else if (type === 'defend') { targetStart = 60; targetWidth = 35; ui.mainZone.style.left = targetStart + '%'; ui.mainZone.style.width = targetWidth + '%'; ui.mainZone.style.backgroundColor = '#3498db'; ui.mainZone.style.display = 'block'; if (player.counterStance) { perfectStart = 72; perfectEnd = 82; ui.perfectZone.style.left = perfectStart + '%'; ui.perfectZone.style.width = '10%'; ui.perfectZone.style.backgroundColor = '#ff4757'; } else { perfectStart = 75; perfectEnd = 81; ui.perfectZone.style.left = perfectStart + '%'; ui.perfectZone.style.width = '6%'; ui.perfectZone.style.backgroundColor = '#f1c40f'; } ui.perfectZone.style.display = 'block'; } 
+            // 【新增】：專為雙色 QTE 設計的寬廣防禦區
+            else if (type === 'dual_defend') { 
+                targetStart = 50; targetWidth = 40; 
+                ui.mainZone.style.left = targetStart + '%'; ui.mainZone.style.width = targetWidth + '%'; ui.mainZone.style.backgroundColor = '#3498db'; ui.mainZone.style.display = 'block'; 
+                perfectStart = 65; perfectEnd = 80; 
+                if (player.counterStance) { ui.perfectZone.style.backgroundColor = '#ff4757'; } else { ui.perfectZone.style.backgroundColor = '#f1c40f'; } 
+                ui.perfectZone.style.left = perfectStart + '%'; ui.perfectZone.style.width = (perfectEnd - perfectStart) + '%'; ui.perfectZone.style.display = 'block'; 
+            }
             else if (type === 'aoe_bredeia') { ui.aoeZones[0].style.display = 'block'; ui.aoeZones[0].style.left = '20%'; ui.aoeZones[0].style.backgroundColor = '#2ecc71'; ui.aoeZones[1].style.display = 'block'; ui.aoeZones[1].style.left = '50%'; ui.aoeZones[1].style.backgroundColor = '#2ecc71'; ui.aoeZones[2].style.display = 'block'; ui.aoeZones[2].style.left = '80%'; ui.aoeZones[2].style.backgroundColor = '#2ecc71'; aoeHitStatus = [false, false, false]; aoeHitCount = 0; }
         }
 
@@ -697,20 +960,49 @@
             if (ui.qteArea) ui.qteArea.style.display = 'block'; 
             if (ui.msgBox) ui.msgBox.innerText = msg; 
             
+            if (ui.holdBtn) ui.holdBtn.style.display = 'none'; 
+            if (ui.actionBtn) ui.actionBtn.style.display = 'none';
+            document.getElementById('dual-btn-container').style.display = 'none';
+            
             if (btnType === 'hold') { 
-                if (ui.actionBtn) ui.actionBtn.style.display = 'none'; 
-                if (ui.holdBtn) {
-                    ui.holdBtn.style.display = 'inline-block'; 
-                    ui.holdBtn.innerText = btnText; 
-                    ui.holdBtn.style.backgroundColor = btnColor; 
-                }
+                if (ui.holdBtn) { ui.holdBtn.style.display = 'inline-block'; ui.holdBtn.innerText = btnText; ui.holdBtn.style.backgroundColor = btnColor; }
+            } else if (btnType === 'dual') {
+                document.getElementById('dual-btn-container').style.display = 'flex';
             } else { 
-                if (ui.holdBtn) ui.holdBtn.style.display = 'none'; 
-                if (ui.actionBtn) {
-                    ui.actionBtn.style.display = 'inline-block'; 
-                    ui.actionBtn.innerText = btnText; 
-                    ui.actionBtn.style.backgroundColor = btnColor; 
+                if (ui.actionBtn) { ui.actionBtn.style.display = 'inline-block'; ui.actionBtn.innerText = btnText; ui.actionBtn.style.backgroundColor = btnColor; }
+            }
+        }
+
+        window.checkDualQte = function(color) {
+            if (!isQteActive || qteType !== 'dual') return;
+            
+            let hitCursor = null;
+            let maxPos = -1;
+            
+            dualCursorsData.forEach(c => {
+                if (c.active && !c.processed && c.color === color) {
+                    if (c.pos >= targetStart && c.pos <= targetStart + targetWidth) {
+                        if (c.pos > maxPos) { maxPos = c.pos; hitCursor = c; }
+                    }
                 }
+            });
+            
+            if (hitCursor) {
+                hitCursor.processed = true; hitCursor.active = false; hitCursor.elem.style.display = 'none';
+                let isPerfect = (hitCursor.pos >= perfectStart && hitCursor.pos <= perfectEnd);
+                if (isPerfect) { 
+                    mhStats.perfects++; if (player.counterStance) mhStats.counterTriggered = true; playSound('skill'); 
+                } else { 
+                    mhStats.successes++; mhStats.dmgTaken += Math.max(currentEnemyAttack.dmg - qteBonus, 0); playSound('guard'); 
+                }
+                ui.mainZone.style.backgroundColor = '#f1c40f'; setTimeout(() => { ui.mainZone.style.backgroundColor = '#3498db'; }, 100);
+            } else {
+                let wrongCursor = dualCursorsData.find(c => c.active && !c.processed && c.pos >= targetStart && c.pos <= targetStart + targetWidth);
+                if (wrongCursor) {
+                    wrongCursor.processed = true; wrongCursor.active = false; wrongCursor.elem.style.display = 'none';
+                    mhStats.misses++; mhStats.dmgTaken += currentEnemyAttack.dmg; playSound('miss');
+                    ui.mainZone.style.backgroundColor = '#e74c3c'; setTimeout(() => { ui.mainZone.style.backgroundColor = '#3498db'; }, 100);
+                } else { playSound('miss'); }
             }
         }
 
@@ -738,6 +1030,18 @@
             
             if (qteType === 'reverse') {
                 cursorPosition = 100; cursorDirection = -1; ui.qteCursor.style.left = '100%';
+            } else if (qteType === 'dual') {
+                // 【優化雙色游標】：拉開間距並降低速度上限，確保反應時間充足
+                dualCursorsData = []; mhStats = { perfects: 0, successes: 0, misses: 0, dmgTaken: 0, counterTriggered: false };
+                for(let i=0; i<3; i++) {
+                    let color = Math.random() > 0.5 ? 'red' : 'blue';
+                    let colorHex = color === 'red' ? '#e74c3c' : '#3498db';
+                    let speed = 0.8 + Math.random() * 0.8; // 速度下調，最高只有 1.6
+                    let startPos = -(i * 40) - Math.random() * 20; // 游標之間的間距拉開
+                    let cursorElem = i === 0 ? ui.qteCursor : document.getElementById(`qte-cursor-${i+1}`);
+                    cursorElem.style.display = 'block'; cursorElem.style.backgroundColor = colorHex; cursorElem.style.boxShadow = `0 0 8px ${colorHex}`; cursorElem.style.left = startPos + '%';
+                    dualCursorsData.push({ id: i, color: color, pos: startPos, speed: speed, active: true, elem: cursorElem, processed: false });
+                }
             } else if (pendingAction === 'safeSlash') {
                 let gap1 = 20 + Math.random() * 15; let gap2 = gap1 + 20 + Math.random() * 15; 
                 multiCursorPos = [0, -gap1, -gap2]; multiCursorActive = [true, true, true]; currentCursorTarget = 0; 
@@ -774,7 +1078,21 @@
                     return; 
                 }
 
-                if (pendingAction === 'moonHold') {
+                if (qteType === 'dual') {
+                    let allDone = true;
+                    dualCursorsData.forEach(c => {
+                        if (c.active) {
+                            c.pos += (c.speed * timeMultiplier);
+                            if (c.pos > 0) c.elem.style.left = c.pos + '%';
+                            if (c.pos > 100) {
+                                c.active = false; c.elem.style.display = 'none';
+                                if (!c.processed) { c.processed = true; mhStats.misses++; mhStats.dmgTaken += currentEnemyAttack.dmg; playSound('miss'); }
+                            } else { allDone = false; }
+                        }
+                    });
+                    if (allDone) { isQteActive = false; cancelAnimationFrame(qteReq); finalizeMultiHitDefend(); } 
+                    else { qteReq = requestAnimationFrame(moveCursor); }
+                } else if (pendingAction === 'moonHold') {
                     cursorPosition += (qteSpeed * timeMultiplier * cursorDirection); if (cursorPosition >= 100) { cursorPosition = 100; cursorDirection = -1; } else if (cursorPosition <= 0) { cursorPosition = 0; cursorDirection = 1; } ui.qteCursor.style.left = cursorPosition + '%'; qteReq = requestAnimationFrame(moveCursor);
                 } else if (pendingAction === 'safeSlash') {
                     let allDone = true;
@@ -816,7 +1134,7 @@
         }
 
         function checkQte() { 
-            if (!isQteActive) return; 
+            if (!isQteActive || qteType === 'dual') return; 
             
             if (pendingAction === 'issen') {
                 if (issenState === 'active') { issenSuccess = true; clearTimeout(issenReactionTimeout); isQteActive = false; issenState = 'done'; ui.mainZone.style.backgroundColor = '#f1c40f'; setTimeout(() => { checkQteResult(); }, 200); } 
@@ -864,7 +1182,7 @@ if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
         }
 
         function finalizeMultiHitDefend() {
-            ui.qteArea.style.display = 'none'; ui.mainZone.style.display = 'none';
+            ui.qteArea.style.display = 'none'; ui.mainZone.style.display = 'none'; document.getElementById('dual-btn-container').style.display = 'none';
             let attacker = enemies[activeEnemyIndex];
             let msg = `【結算】完美 ${mhStats.perfects}次 | 成功 ${mhStats.successes}次 | 失敗 ${mhStats.misses}次\n`;
             
@@ -901,12 +1219,21 @@ if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
             ui.qteArea.style.display = 'none';
             let isPerfect = (cursorPosition >= perfectStart && cursorPosition <= perfectEnd); let isSuccess = (cursorPosition >= targetStart && cursorPosition <= targetStart + targetWidth);
             let dmg = aoeBaseAttack; if (isPerfect) { dmg += 4; playSound('skill'); } else if (isSuccess) { dmg += 2; playSound('hit'); } else { dmg = 1; playSound('miss'); } 
+            
             let finalMsg = isPerfect ? `✨ 完美蓄力！月華爆發！\n` : (isSuccess ? `✨ 月華爆發！\n` : `❌ 蓄力時機錯誤... 軟弱的月光\n`);
+            
             enemies.forEach(target => {
                 if (target.isAlive) {
                     if (target.shield && dmg < 6) { finalMsg += `[${target.name}] 動態裝甲抵擋了衝擊！ `; playSound('guard'); } 
                     else {
                         if(target.shield && dmg === 6) { finalMsg += `[破盾] `; target.shield = false; updateEnemyStatus(target); }
+                        
+                        // 【蓄力打斷機制 (AOE)】
+                        if (target.isCharging && Math.random() < 0.3) {
+                            target.isCharging = false; updateEnemyStatus(target); dmg += 5;
+                            finalMsg += `\n💥 [弱點破壞] 打斷了 ${target.name} 的蓄力！ `; playSound('skill');
+                        }
+
                         finalMsg += `[${target.name}] -${dmg}HP `; target.hp = Math.max(target.hp - dmg, 0); document.getElementById(`enemy-${target.id}-hp`).innerText = target.hp;
                         if (target.hp === 0) { target.isAlive = false; let box = document.getElementById(`enemy-${target.id}-box`); box.style.transform = 'scale(0)'; box.style.opacity = '0'; setTimeout(() => { box.style.display = 'none'; }, 500); }
                     }
@@ -979,6 +1306,13 @@ if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
                 enemies.forEach(target => {
                     if (target.isAlive) {
                         if (target.shield) { finalMsg += `[${target.name}] 護盾抵擋！ `; } else {
+                            
+                            // 【蓄力打斷機制 (AOE)】
+                            if (target.isCharging && Math.random() < 0.3) {
+                                target.isCharging = false; updateEnemyStatus(target); dmg += 5;
+                                finalMsg += `\n💥 [弱點破壞] 打斷了 ${target.name} 的蓄力！ `; playSound('skill');
+                            }
+
                             finalMsg += `[${target.name}] -${dmg}HP `; target.hp = Math.max(target.hp - dmg, 0); document.getElementById(`enemy-${target.id}-hp`).innerText = target.hp;
                             if (target.hp === 0) { target.isAlive = false; let box = document.getElementById(`enemy-${target.id}-box`); box.style.transform = 'scale(0)'; box.style.opacity = '0'; setTimeout(() => { box.style.display = 'none'; }, 500); }
                         }
@@ -992,6 +1326,24 @@ if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
                 let allDead = enemies.every(e => !e.isAlive); if (allDead) { setTimeout(checkWinCondition, 1000); return; }
                 activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 1500);
             }
+        }
+
+        // 【通用蓄力打斷判定機制 (單體攻擊)】
+        function applyDamageToTarget(target, dmg) {
+            let interruptMsg = "";
+            if (target.isCharging && Math.random() < 0.3) {
+                target.isCharging = false; updateEnemyStatus(target);
+                dmg += 5;
+                interruptMsg = `\n💥 弱點破壞！成功打斷了 ${target.name} 的蓄力！追加 5 點傷害！`;
+                playSound('skill');
+            }
+
+            target.hp = Math.max(target.hp - dmg, 0); document.getElementById(`enemy-${target.id}-hp`).innerText = target.hp;
+            
+            if (interruptMsg) ui.msgBox.innerText += interruptMsg;
+
+            if (target.hp === 0) { target.isAlive = false; let box = document.getElementById(`enemy-${target.id}-box`); if(box) { box.style.transform = 'scale(0)'; box.style.opacity = '0'; } setTimeout(() => { if(box) box.style.display = 'none'; ui.msgBox.innerText = `${target.name} 機能停止！`; setTimeout(checkWinCondition, 1500); }, 500); } 
+            else { setTimeout(checkWinCondition, 1500); }
         }
 
         function startDefensiveMash() {
@@ -1043,12 +1395,6 @@ if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
             applyDamageToTarget(target, totalDmg);
         }
 
-        function applyDamageToTarget(target, dmg) {
-            target.hp = Math.max(target.hp - dmg, 0); document.getElementById(`enemy-${target.id}-hp`).innerText = target.hp;
-            if (target.hp === 0) { target.isAlive = false; let box = document.getElementById(`enemy-${target.id}-box`); if(box) { box.style.transform = 'scale(0)'; box.style.opacity = '0'; } setTimeout(() => { if(box) box.style.display = 'none'; ui.msgBox.innerText = `${target.name} 機能停止！`; setTimeout(checkWinCondition, 1500); }, 500); } 
-            else { setTimeout(checkWinCondition, 1500); }
-        }
-
         function checkWinCondition() {
             let allDead = enemies.every(e => !e.isAlive);
             if (allDead) { 
@@ -1073,7 +1419,7 @@ if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
 
         function executeSingleEnemyAI(enemy) {
             pendingAction = "defend"; qteType = 'normal'; qteSpeed = 1.2; fakeoutTriggered = false; multiHitCurrent = 0; multiHitMax = 1; updatePlayerStatus(); 
-            mhStats = { perfects: 0, successes: 0, misses: 0, dmgTaken: 0, counterTriggered: false }; // 重置多段攻擊統計
+            mhStats = { perfects: 0, successes: 0, misses: 0, dmgTaken: 0, counterTriggered: false }; 
 
             if (enemy.name === "廢墟清掃者") {
                 let moves = ["reverse_hack", "invisible_strike", "clash", "shoot"]; 
@@ -1103,6 +1449,47 @@ if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
                     qteType = 'multihit'; multiHitMax = 3; qteSpeed = 2.0; currentEnemyAttack = { name: "機槍掃射", dmg: 2, appliesPoison: false };
                     ui.msgBox.innerText = `廢墟清掃者 發動【機槍掃射】！\n(連續防禦 3 次！)`; 
                     setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "連續防禦！", "#3498db", `攻擊！(第 1 擊)`); startQteAnimation(); }, 2000); 
+                }
+            }
+            // 【優化】：雙子精英清掃者 AI (傷害與難度下調)
+            else if (enemy.name.includes("精英清掃者")) {
+                if (enemy.isCharging) {
+                    enemy.isCharging = false; updateEnemyStatus(enemy); enemy.lastMove = "ultimate"; 
+                    currentEnemyAttack = { name: "雙子共鳴炮", dmg: 12, appliesPoison: false, isUltimate: true }; qteSpeed = 3.5; 
+                    ui.msgBox.innerText = `${enemy.name} 釋放了【雙子共鳴炮】！\n(警告！毀滅性打擊！)`;
+                    setTimeout(() => { configureQteZones('defend'); targetStart = 65; targetWidth = 20; if (player.counterStance) { perfectStart = 72; perfectEnd = 78; ui.perfectZone.style.backgroundColor = '#ff4757'; } else { perfectStart = 73; perfectEnd = 77; ui.perfectZone.style.backgroundColor = '#f1c40f'; } ui.mainZone.style.left = '65%'; ui.mainZone.style.width = '20%'; ui.perfectZone.style.left = perfectStart + '%'; ui.perfectZone.style.width = (perfectEnd - perfectStart) + '%'; setupQteUI("click", player.counterStance ? "防禦 / 反擊！" : "閃避！", "#e74c3c", `致命攻擊！`); startQteAnimation(); }, 2000); return; 
+                }
+                
+                let moves = ["laser_blade", "dual_strike", "charge"]; 
+                if (!enemy.shield && Math.random() < 0.3) { moves.push("sync_shield"); }
+                if (moves.includes(enemy.lastMove) && moves.length > 1) { moves = moves.filter(m => m !== enemy.lastMove); }
+                let chosen = moves[Math.floor(Math.random() * moves.length)]; enemy.lastMove = chosen; 
+
+                if (chosen === "sync_shield") { 
+                    enemy.shield = true; updateEnemyStatus(enemy); 
+                    ui.msgBox.innerText = `${enemy.name} 展開【光學偏移盾】！\n物理防禦大幅提升！`; 
+                    activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 2000); 
+                }
+                // 【優化】：雙色游標攻擊！(擴大範圍、降低速度、拉開間距)
+                else if (chosen === "dual_strike") { 
+                    qteType = 'dual'; currentEnemyAttack = { name: "雙子協同打擊", dmg: 3, appliesPoison: false };
+                    ui.msgBox.innerText = `${enemy.name} 發動【雙子協同打擊】！\n(紅藍游標來襲！按下對應顏色的按鈕防禦！)`; 
+                    setTimeout(() => { configureQteZones('dual_defend'); setupQteUI("dual", "", "", `注意顏色對應！(共 3 擊)`); startQteAnimation(); }, 2500); 
+                }
+                else if (chosen === "plasma_shoot") { 
+                    qteType = 'multihit'; multiHitMax = 4; qteSpeed = 2.2; currentEnemyAttack = { name: "電漿連射", dmg: 2, appliesPoison: false };
+                    ui.msgBox.innerText = `${enemy.name} 發動【電漿連射】！\n(連續防禦 4 次！速度極快！)`; 
+                    setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "連續防禦！", "#3498db", `攻擊！(第 1 擊)`); startQteAnimation(); }, 2000); 
+                }
+                else if (chosen === "laser_blade") { 
+                    currentEnemyAttack = { name: "高週波光刃", dmg: 6, appliesPoison: false }; qteSpeed = 2.8; 
+                    ui.msgBox.innerText = `${enemy.name} 揮出【高週波光刃】！\n(極速斬擊！注意閃避！)`; 
+                    setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "閃避！", "#e74c3c", `光刃襲來！`); startQteAnimation(); }, 1500); 
+                }
+                else if (chosen === "charge") { 
+                    enemy.isCharging = true; updateEnemyStatus(enemy); 
+                    ui.msgBox.innerText = `${enemy.name} 正在進行核心共鳴...\n(下回合將發動毀滅性炮擊！)`; 
+                    activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 2000); 
                 }
             }
             else if (enemy.name === "正常訓練人偶") {
