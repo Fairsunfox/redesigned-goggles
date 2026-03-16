@@ -253,7 +253,10 @@
         </div>
 
         <div class="ui-panel">
-            <div id="turn-timer-container" style="display:none; font-size: 16px; color: #ff6b6b; font-weight: bold; margin-bottom: 10px;">⏳ 剩餘行動時間: <span id="turn-timer-display">60</span> 秒</div>
+            <div id="turn-indicator" style="display: none; font-size: 16px; font-weight: bold; margin-bottom: 10px; padding: 5px 15px; border-radius: 20px; background-color: #222; border: 2px solid #555; text-align: center; width: fit-content; margin-left: auto; margin-right: auto;">🟢 你的回合</div>
+            
+            <div id="turn-timer-container" style="display:none; font-size: 16px; color: #ff6b6b; font-weight: bold; margin-bottom: 10px; text-align: center;">⏳ 剩餘行動時間: <span id="turn-timer-display">60</span> 秒</div>
+            
             <div id="message-box">戰鬥即將開始...</div>
             <div id="action-menu">
                 <button class="btn-attack" onpointerdown="playSound('click'); startAction('attack')">攻擊</button>
@@ -315,7 +318,7 @@
         // ==========================================
         function getPart1() {
             return [
-                { speaker: "", text: "在一個昏暗的場景，一名銀髮少女坐在沙發上翻閱著某本書籍。", bg: "#1a1a2e" },
+                { speaker: "", text: "在一個昏暗的場景，一名銀髮少女坐在沙發上翻閱著某本書。", bg: "#1a1a2e" },
                 { speaker: "", text: "突然，她好像察覺到了什麼，並闔上了書本。", bg: "#1a1a2e" },
                 { speaker: "布蕾蒂雅", text: "一切的起因，便是源自於那個祭典的夜晚。", bg: "#1a1a2e" },
                 { speaker: "布蕾蒂雅", text: "或許你們早就知道這個故事，不過我可不會在乎那麼多。\n畢竟你們都來看了，就當作你們沒看過吧。", bg: "#1a1a2e" },
@@ -777,13 +780,15 @@
             showScreen('screen-battle');
 
             if (isMultiplayer) { 
+                document.getElementById('turn-indicator').style.display = 'block';
                 if (isHost) {
                     mpTurnIndex = 0; // 0 = 1P回合
                     startMyTurn();
                 } else {
-                    waitForPeerTurn();
+                    waitForPeerTurn('1P');
                 }
             } else { 
+                document.getElementById('turn-indicator').style.display = 'none';
                 ui.msgBox.innerText = `戰鬥開始！輪到 ${player.name} 行動。`; 
             }
         }
@@ -934,7 +939,7 @@
                 else { ui.msgBox.innerText = "所有目標已被擊破！戰鬥勝利！\n(請重整網頁回到標題)"; bgm.pause(); } 
             } else { 
                 if (nextPhaseCallback) nextPhaseCallback();
-                else startEnemyPhase(); // 單機模式的預設輪轉
+                else startEnemyPhase(); 
             } 
         }
 
@@ -942,7 +947,7 @@
             stopTurnTimer();
             if (isMultiplayer) {
                 if (isHost) setTimeout(advanceMultiplayerTurn, 1500);
-                else { sendGameData({ type: 'turn_ended' }); waitForPeerTurn(); }
+                else { sendGameData({ type: 'turn_ended' }); waitForPeerTurn('1P'); }
             } else {
                 setTimeout(startEnemyPhase, 1500);
             }
@@ -952,7 +957,7 @@
             stopTurnTimer();
             if (isMultiplayer) {
                 if (isHost) setTimeout(advanceMultiplayerTurn, 1500);
-                else { sendGameData({ type: 'defend_ended' }); waitForPeerTurn(); }
+                else { sendGameData({ type: 'defend_ended' }); waitForPeerTurn('1P'); }
             } else {
                 activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 1500);
             }
@@ -1012,7 +1017,7 @@
             if (pendingAction === "attack") { let isSuccess = (cursorPosition >= targetStart && cursorPosition <= targetStart + targetWidth); let target = enemies[currentTargetIndex]; if (target.shield) { playSound('guard'); ui.msgBox.innerText = `攻擊被彈開！${target.name} 有動態裝甲保護。`; setTimeout(() => checkWinCondition(finishMyAction), 2000); return; } let dmg = baseAttack + (isSuccess ? qteBonus : 0); if (isSuccess) playSound('skill'); else playSound('hit'); ui.msgBox.innerText = isSuccess ? `會心一擊！對 ${target.name} 造成 ${dmg} 點傷害。` : `普通攻擊。對 ${target.name} 造成 ${dmg} 點傷害。`; applyDamageToTarget(target, dmg); } 
             else if (pendingAction === "safeSlash") { let target = enemies[currentTargetIndex]; let dmg = 0; if (target.shield) { playSound('guard'); ui.msgBox.innerText = `攻擊被彈開！${target.name} 的裝甲擋下了星屑斬。\n(提示：需要使用「一閃」來破盾！)`; setTimeout(() => checkWinCondition(finishMyAction), 2000); return; } else { if (aoeHitCount === 3) { dmg = 7; playSound('skill'); ui.msgBox.innerText = `✨ 完美星屑斬！全段命中觸發暴擊！\n對 ${target.name} 造成 ${dmg} 點傷害。`; } else if (aoeHitCount > 0) { dmg = aoeHitCount * 2; playSound('hit'); ui.msgBox.innerText = `星屑斬！(${aoeHitCount} 段命中)\n對 ${target.name} 造成 ${dmg} 點傷害。`; } else { playSound('miss'); ui.msgBox.innerText = `揮空了... ${player.name} 的攻擊沒有抓到節奏。`; setTimeout(() => checkWinCondition(finishMyAction), 1500); return; } } applyDamageToTarget(target, dmg); }
             else if (pendingAction === "issen") { let target = enemies[currentTargetIndex]; if (issenSuccess) { playSound('skill'); let dmg; if(target.shield) { dmg = 10; target.shield = false; updateEnemyStatus(target); ui.msgBox.innerText = `⚡ 燕返一閃！切裂了動態裝甲！\n對 ${target.name} 造成 ${dmg} 點致命傷害。`; } else { dmg = 5; ui.msgBox.innerText = `⚡ 燕返一閃！\n(目標無護盾，威力減半)\n對 ${target.name} 造成 ${dmg} 點傷害。`; } applyDamageToTarget(target, dmg); } else { if (issenState !== 'waiting') { playSound('miss'); ui.msgBox.innerText = `揮空了... ${player.name} 的一閃沒有擊中目標。`; } setTimeout(() => checkWinCondition(finishMyAction), 1500); } }
-            else if (pendingAction === "aoe_bredeia") { let dmg = aoeBaseAttack + (aoeHitCount * 2); let finalMsg = `✨星空爆發！(Combo: ${aoeHitCount})\n`; playSound('skill'); if (isMultiplayer) sendGameData({ type: 'action', skill: '星空爆發(AOE)', damage: dmg }); enemies.forEach(target => { if (target.isAlive) { if (target.shield) { finalMsg += `[${target.name}] 護盾抵擋！ `; } else { if (target.isCharging && Math.random() < 0.3) { target.isCharging = false; updateEnemyStatus(target); dmg += 5; finalMsg += `\n💥 [弱點破壞] 打斷了 ${target.name} 的蓄力！ `; playSound('skill'); } target.hp = Math.max(target.hp - dmg, 0); document.getElementById(`enemy-${target.id}-hp`).innerText = target.hp; if (target.hp === 0) { target.isAlive = false; let box = document.getElementById(`enemy-${target.id}-box`); box.style.transform = 'scale(0)'; box.style.opacity = '0'; setTimeout(() => { box.style.display = 'none'; }, 500); } } } }); ui.msgBox.innerText = finalMsg; setTimeout(() => checkWinCondition(finishMyAction), 2500); }
+            else if (pendingAction === "aoe_bredeia") { let dmg = aoeBaseAttack + (aoeHitCount * 2); let finalMsg = `✨星空爆發！(Combo: ${aoeHitCount})\n`; playSound('skill'); if (isMultiplayer) sendGameData({ type: 'action', skill: '星空爆發 (AOE)', damage: dmg }); enemies.forEach(target => { if (target.isAlive) { if (target.shield) { finalMsg += `[${target.name}] 護盾抵擋！ `; } else { if (target.isCharging && Math.random() < 0.3) { target.isCharging = false; updateEnemyStatus(target); dmg += 5; finalMsg += `\n💥 [弱點破壞] 打斷了 ${target.name} 的蓄力！ `; playSound('skill'); } target.hp = Math.max(target.hp - dmg, 0); document.getElementById(`enemy-${target.id}-hp`).innerText = target.hp; if (target.hp === 0) { target.isAlive = false; let box = document.getElementById(`enemy-${target.id}-box`); box.style.transform = 'scale(0)'; box.style.opacity = '0'; setTimeout(() => { box.style.display = 'none'; }, 500); } } } }); ui.msgBox.innerText = finalMsg; setTimeout(() => checkWinCondition(finishMyAction), 2500); }
             else if (pendingAction === "defend") { let isPerfect = (cursorPosition >= perfectStart && cursorPosition <= perfectEnd); let isSuccess = (cursorPosition >= targetStart && cursorPosition <= targetStart + targetWidth); processDefendResult(isSuccess, isPerfect); }
         }
 
@@ -1021,8 +1026,7 @@
             if (target.isCharging && Math.random() < 0.3) { target.isCharging = false; updateEnemyStatus(target); dmg += 5; interruptMsg = `\n💥 弱點破壞！成功打斷了 ${target.name} 的蓄力！追加 5 點傷害！`; playSound('skill'); }
             target.hp = Math.max(target.hp - dmg, 0); document.getElementById(`enemy-${target.id}-hp`).innerText = target.hp;
             
-            // 廣播傷害給隊友
-            if (isMultiplayer) sendGameData({ type: 'action', skill: pendingAction, damage: dmg, targetId: target.id, currentHp: target.hp });
+            if (isMultiplayer) { sendGameData({ type: 'action', skill: pendingAction, damage: dmg, targetId: target.id, currentHp: target.hp }); }
             
             if (interruptMsg) ui.msgBox.innerText += interruptMsg;
             if (target.hp === 0) { target.isAlive = false; let box = document.getElementById(`enemy-${target.id}-box`); if(box) { box.style.transform = 'scale(0)'; box.style.opacity = '0'; } setTimeout(() => { if(box) box.style.display = 'none'; ui.msgBox.innerText = `${target.name} 機能停止！`; setTimeout(() => checkWinCondition(finishMyAction), 1500); }, 500); } 
@@ -1046,7 +1050,6 @@
         }
 
         function startEnemyPhase() { if (player.poisoned) { playSound('miss'); updateMyHp(player.hp - 2); ui.msgBox.innerText = `異常狀態發作... 受到 2 點真實傷害。`; if (player.hp === 0) { setTimeout(() => { ui.msgBox.innerText = `${player.name} 倒下了... 戰鬥失敗。`; bgm.pause(); }, 1500); return; } setTimeout(() => { activeEnemyIndex = 0; processEnemyTurnQueue(); }, 1500); } else { activeEnemyIndex = 0; processEnemyTurnQueue(); } }
-
         function processEnemyTurnQueue() { while (activeEnemyIndex < enemies.length && !enemies[activeEnemyIndex].isAlive) { activeEnemyIndex++; } if (activeEnemyIndex >= enemies.length) { ui.qteArea.style.display = 'none'; if (player.counterStance) { player.counterStance = false; updatePlayerStatus(); } ui.msgBox.innerText = `輪到 ${player.name} 行動了！`; ui.actionMenu.style.display = 'flex'; return; } let enemy = enemies[activeEnemyIndex]; executeSingleEnemyAI(enemy); }
 
         function decideEnemyMove(enemy) {
@@ -1103,49 +1106,53 @@
         // ==========================================
         // 🌐 WebRTC 雙人戰鬥流 (Turn-Based Sync)
         // ==========================================
+        function setEnemyTurnUI() {
+            ui.actionMenu.style.display = 'none'; closeSubMenus(); stopTurnTimer();
+            let ind = document.getElementById('turn-indicator');
+            if (ind) { ind.style.display = 'block'; ind.innerText = "⚠️ 敵方回合"; ind.style.borderColor = "#e74c3c"; ind.style.color = "#e74c3c"; }
+        }
+
         function startMyTurn() {
-            if (player.hp <= 0) { finishMyAction(); return; } // 死亡直接跳過回合
+            if (player.hp <= 0) { finishMyAction(); return; } 
             ui.actionMenu.style.display = 'flex';
             if (player.counterStance) { player.counterStance = false; updatePlayerStatus(); }
+            let ind = document.getElementById('turn-indicator');
+            if (ind) { ind.style.display = 'block'; ind.innerText = "🟢 你的回合"; ind.style.borderColor = "#2ecc71"; ind.style.color = "#2ecc71"; }
             ui.msgBox.innerText = `輪到 ${player.name} 行動了！`;
             startTurnTimer();
         }
 
-        function waitForPeerTurn() {
-            ui.actionMenu.style.display = 'none'; closeSubMenus();
+        function waitForPeerTurn(turnOwner = '') {
+            ui.actionMenu.style.display = 'none'; closeSubMenus(); stopTurnTimer();
+            let ind = document.getElementById('turn-indicator');
+            if (ind) { ind.style.display = 'block'; ind.innerText = "🔴 隊友的回合"; ind.style.borderColor = "#3498db"; ind.style.color = "#3498db"; }
             ui.msgBox.innerText = `等待隊友 (${peerData.name}) 行動中...`;
         }
 
-        let mpTurnIndex = 0; // 0=1P, 1=Enemy, 2=2P, 3=Enemy
+        let mpTurnIndex = 0; 
         function advanceMultiplayerTurn() {
             let allDead = enemies.every(e => !e.isAlive);
             if(allDead) return;
 
             mpTurnIndex = (mpTurnIndex + 1) % 4;
-            
-            // 防卡死：跳過死亡玩家的回合
             if (mpTurnIndex === 0 && (!isHost ? peerData.hp : player.hp) <= 0) mpTurnIndex = 1;
             if (mpTurnIndex === 2 && (!isHost ? player.hp : peerData.hp) <= 0) mpTurnIndex = 3;
 
             let nextPhase = ['1P', 'Enemy', '2P', 'Enemy'][mpTurnIndex];
             sendGameData({ type: 'set_turn', phase: nextPhase });
             
-            if (nextPhase === '1P') {
-                startMyTurn(); // 房主就是 1P
-            } else if (nextPhase === '2P') {
-                waitForPeerTurn();
-            } else if (nextPhase === 'Enemy') {
-                executeMultiplayerEnemyTurn();
-            }
+            if (nextPhase === '1P') { startMyTurn(); } 
+            else if (nextPhase === '2P') { waitForPeerTurn('2P'); } 
+            else if (nextPhase === 'Enemy') { executeMultiplayerEnemyTurn(); }
         }
 
         function executeMultiplayerEnemyTurn() {
+            setEnemyTurnUI();
             ui.msgBox.innerText = `敵方行動中...`;
             let aliveEnemies = enemies.filter(e => e.isAlive);
             if (aliveEnemies.length === 0) return checkWinCondition();
             
             let enemy = aliveEnemies[Math.floor(Math.random() * aliveEnemies.length)];
-            
             let target = '1P';
             if (player.hp > 0 && peerData.hp > 0) { target = (Math.random() < 0.5) ? '1P' : '2P'; } 
             else if (player.hp <= 0) { target = '2P'; } 
@@ -1165,8 +1172,7 @@
             }
         }
 
-        let peerConnection; let dataChannel; let isMultiplayer = false; let isHost = false; let myChar = null; let peerChar = null;
-        let peerData = { name: '', hp: 0, maxHp: 0 };
+        let peerConnection; let dataChannel; 
         const iceServers = { iceServers: [ { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' } ] };
 
         function setupDataChannel(channel) {
@@ -1239,22 +1245,22 @@
                     }
                 }
             } else if (data.type === 'set_turn') {
-                // 收到房主的回合切換指令
-                if ((data.phase === '1P' && isHost) || (data.phase === '2P' && !isHost)) { startMyTurn(); } 
-                else if ((data.phase === '2P' && isHost) || (data.phase === '1P' && !isHost)) { waitForPeerTurn(); }
+                if (data.phase === '1P') { if (isHost) startMyTurn(); else waitForPeerTurn('1P'); } 
+                else if (data.phase === '2P') { if (!isHost) startMyTurn(); else waitForPeerTurn('2P'); } 
+                else if (data.phase === 'Enemy') { setEnemyTurnUI(); ui.msgBox.innerText = "敵方行動中..."; }
             } else if (data.type === 'enemy_attack' && !isHost) {
-                // 收到房主派發的敵方攻擊指令
                 let targetEnemy = enemies.find(e => e.id === data.enemyId);
-                if (targetEnemy) setTimeout(() => { executeSingleEnemyAI(targetEnemy, data.move); }, 1500);
-            } else if (data.type === 'turn_ended' || data.type === 'defend_ended' || data.type === 'action_skip') {
+                if (targetEnemy) {
+                    setEnemyTurnUI(); ui.msgBox.innerText = `敵方 ${targetEnemy.name} 鎖定了 2P (${player.name})！`;
+                    setTimeout(() => { executeSingleEnemyAI(targetEnemy, data.move); }, 1500);
+                }
+            } else if (data.type === 'turn_ended' || data.type === 'defend_ended') {
                 if (isHost) advanceMultiplayerTurn();
             } else if (data.type === 'update_p_hp') {
                 peerData.hp = data.hp; document.getElementById('p2-hp').innerText = peerData.hp;
                 if (peerData.hp <= 0) ui.msgBox.innerText += `\n⚠️ 警告：隊友已經倒下了！`;
             } else if (data.type === 'msg') {
                 ui.msgBox.innerText = data.msg;
-            } else if (data.type === 'sync') {
-                console.log(data.msg);
             }
         }
 
