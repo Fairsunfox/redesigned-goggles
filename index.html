@@ -170,6 +170,8 @@
             <h3 style="color: #f1c40f; margin-top: 0;">▶ 1P (房主) 建立連線</h3>
             <button class="minigame-btn" style="background-color: #e67e22; padding: 10px 20px;" onpointerdown="createHost()">1. 產生邀請碼</button>
             <textarea id="local-sdp" class="webrtc-textarea" placeholder="系統將在此產生邀請碼...請複製給 2P" readonly></textarea>
+            <button class="minigame-btn" style="background-color: #8e44ad; padding: 8px 15px; font-size: 16px; width: 100%; margin-top: 0;" onpointerdown="copyToClipboard('local-sdp', this)">📋 一鍵複製邀請碼</button>
+            
             <textarea id="remote-answer" class="webrtc-textarea" placeholder="請在此貼上 2P 回傳的【回應碼】"></textarea>
             <button class="minigame-btn" style="background-color: #27ae60; padding: 10px 20px;" onpointerdown="connectHost()">3. 確認連線</button>
         </div>
@@ -179,6 +181,7 @@
             <textarea id="remote-offer" class="webrtc-textarea" placeholder="請在此貼上 1P 傳來的【邀請碼】"></textarea>
             <button class="minigame-btn" style="background-color: #3498db; padding: 10px 20px;" onpointerdown="joinGame()">2. 接受邀請並產生回應碼</button>
             <textarea id="local-answer" class="webrtc-textarea" placeholder="系統將在此產生回應碼...請複製回傳給 1P" readonly></textarea>
+            <button class="minigame-btn" style="background-color: #8e44ad; padding: 8px 15px; font-size: 16px; width: 100%; margin-top: 0;" onpointerdown="copyToClipboard('local-answer', this)">📋 一鍵複製回應碼</button>
         </div>
 
         <div id="connection-status" style="font-size: 18px; color: #aaa; font-weight: bold; margin-top: 10px;">狀態：等待連線中...</div>
@@ -573,7 +576,7 @@
             { speaker: "鈴仙凪人", text: "聽起來妳好像很瞭解她？", bg: "#0a0a1a" },
             { speaker: "赫爾墨斯", text: "就憑我與她曾經是合作夥伴。", bg: "#0a0a1a" },
             { speaker: "鈴仙凪人", text: "（合作夥伴！？艾拉露恩從來沒說過這件事……）", bg: "#0a0a1a" },
-            { speaker: "", text: "赫爾墨斯這時拿出了一管解藥遞給凪人。", bg: "#0a0a1a" },
+            { speaker: "", text: "赫爾墨斯這時拿出拿出了一管解藥遞給凪人。", bg: "#0a0a1a" },
             { speaker: "赫爾墨斯", text: "當你收下的那一刻，你將會獲得真正的「自由」。", bg: "#0a0a1a" },
             { speaker: "鈴仙凪人", text: "那妳又該如何保證這個解藥真的是解藥呢？", bg: "#0a0a1a" },
             { speaker: "赫爾墨斯", text: "騙你對我沒有好處。", bg: "#0a0a1a" },
@@ -1505,7 +1508,7 @@
                 }
                 else if (chosen === "invisible_strike") { 
                     qteType = 'invisible'; currentEnemyAttack = { name: "隱形斬擊", dmg: 6, appliesPoison: false }; qteSpeed = 1.2; 
-                    ui.msgBox.innerText = `廢墟清掃者 啟動光學迷彩！\n警告：游標即將隱形，請憑節奏感防禦！`; 
+                    ui.msgBox.innerText = `廢墟清掃者 啟光學迷彩！\n警告：游標即將隱形，請憑節奏感防禦！`; 
                     setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "防禦！", "#3498db", `注意隱形時機！`); startQteAnimation(); }, 2500); 
                 }
                 else if (chosen === "clash") { 
@@ -1713,6 +1716,35 @@
             } else if (data.type === 'sync') {
                 ui.msgBox.innerText = data.msg;
             }
+        }
+
+        // ==========================================
+        // 📋 一鍵複製功能
+        // ==========================================
+        function copyToClipboard(elementId, btnElement) {
+            playSound('click');
+            const textToCopy = document.getElementById(elementId).value;
+            
+            if (!textToCopy) {
+                alert("還沒有產生代碼可以複製喔！");
+                return;
+            }
+
+            // 使用現代的 Clipboard API
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                // 複製成功時，改變按鈕顏色和文字給予視覺回饋
+                const originalText = btnElement.innerText;
+                btnElement.innerText = "✅ 複製成功！";
+                btnElement.style.backgroundColor = "#2ecc71";
+                
+                // 2 秒後變回原樣
+                setTimeout(() => {
+                    btnElement.innerText = originalText;
+                    btnElement.style.backgroundColor = "#8e44ad";
+                }, 2000);
+            }).catch(err => {
+                alert("瀏覽器阻擋了複製功能，請嘗試手動全選。\n錯誤訊息: " + err);
+            });
         }
     </script>
 </body>
