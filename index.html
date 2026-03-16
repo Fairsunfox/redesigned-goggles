@@ -30,7 +30,7 @@
         .scrollable-screen {
             justify-content: flex-start !important; 
             overflow-y: auto;
-            touch-action: pan-y !important; 
+            touch-action: pan-y !important; /* 確保手機可以上下滑動 */
             max-height: 95vh;
             padding-top: 30px;
             padding-bottom: 50px;
@@ -127,7 +127,7 @@
         <h1 class="menu-title">星空彼方的約定<br><span style="font-size:18px; color:#aaa;">QTE 戰鬥模擬器</span></h1>
         <button class="menu-btn btn-story" onpointerdown="showScreen('screen-story-select')">📖 劇情模式</button>
         <button class="menu-btn btn-boss-mode" onpointerdown="showScreen('screen-char')">⚔️ 單人挑戰模式</button>
-        <button class="menu-btn" style="background-color: #27ae60;" onclick="showScreen('screen-webrtc')">🌐 雙人連線共鬥</button>
+        <button class="menu-btn" style="background-color: #27ae60;" onpointerdown="showScreen('screen-webrtc')">🌐 雙人連線共鬥</button>
     </div>
 
     <div id="screen-webrtc" class="screen scrollable-screen">
@@ -167,17 +167,17 @@
     <div id="screen-story-select" class="screen scrollable-screen">
         <h2 class="menu-subtitle">選擇章節</h2>
         <h3 style="color: #aaa; margin-bottom: 10px; font-size: 18px; flex-shrink: 0;">【序章：星空彼方的約定】</h3>
-        <button class="menu-btn" style="background-color: #e67e22; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(1)">第一幕：祭典與星之門</button>
-        <button class="menu-btn" style="background-color: #d35400; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(2)">第二幕：虛擬訓練</button>
-        <button class="menu-btn" style="background-color: #a84300; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(3)">第三幕：冰雪與月兔</button>
+        <button class="menu-btn" style="background-color: #e67e22; padding: 10px 20px; font-size: 16px;" onclick="loadChapter(1)">第一幕：祭典與星之門</button>
+        <button class="menu-btn" style="background-color: #d35400; padding: 10px 20px; font-size: 16px;" onclick="loadChapter(2)">第二幕：虛擬訓練</button>
+        <button class="menu-btn" style="background-color: #a84300; padding: 10px 20px; font-size: 16px;" onclick="loadChapter(3)">第三幕：冰雪與月兔</button>
         <h3 style="color: #aaa; margin-top: 20px; margin-bottom: 10px; font-size: 18px; flex-shrink: 0;">【第一章：永夜之城】</h3>
-        <button class="menu-btn" style="background-color: #8e44ad; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(4)">第一幕：夢境與啟程</button>
-        <button class="menu-btn" style="background-color: #9b59b6; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(5)">第二幕：廢墟遭遇戰</button>
-        <button class="menu-btn" style="background-color: #2980b9; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(6)">第三幕：廢棄實驗室</button> 
-        <button class="menu-btn" style="background-color: #1abc9c; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(7)">第四幕：沉寂之心</button>
-        <button class="menu-btn" style="background-color: #16a085; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(8)">第五幕：密室陷阱</button>
-        <button class="menu-btn" style="background-color: #f39c12; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(9)">第六幕：中央都市的交鋒</button>
-        <button class="menu-btn btn-back" style="margin-top: 30px; margin-bottom: 40px;" onpointerdown="showScreen('screen-menu')">返回標題</button>
+        <button class="menu-btn" style="background-color: #8e44ad; padding: 10px 20px; font-size: 16px;" onclick="loadChapter(4)">第一幕：夢境與啟程</button>
+        <button class="menu-btn" style="background-color: #9b59b6; padding: 10px 20px; font-size: 16px;" onclick="loadChapter(5)">第二幕：廢墟遭遇戰</button>
+        <button class="menu-btn" style="background-color: #2980b9; padding: 10px 20px; font-size: 16px;" onclick="loadChapter(6)">第三幕：廢棄實驗室</button> 
+        <button class="menu-btn" style="background-color: #1abc9c; padding: 10px 20px; font-size: 16px;" onclick="loadChapter(7)">第四幕：沉寂之心</button>
+        <button class="menu-btn" style="background-color: #16a085; padding: 10px 20px; font-size: 16px;" onclick="loadChapter(8)">第五幕：密室陷阱</button>
+        <button class="menu-btn" style="background-color: #f39c12; padding: 10px 20px; font-size: 16px;" onclick="loadChapter(9)">第六幕：中央都市的交鋒</button>
+        <button class="menu-btn btn-back" style="margin-top: 30px; margin-bottom: 40px;" onclick="showScreen('screen-menu')">返回標題</button>
     </div>
 
     <div id="screen-story" class="screen">
@@ -227,11 +227,11 @@
 
     <div id="screen-boss" class="screen scrollable-screen">
         <h2 class="menu-subtitle">選擇討伐目標</h2>
-        <button class="menu-btn btn-boss-tutorial" onpointerdown="selectBoss('tutorial')">🔰 新手教學：基礎訓練</button>
-        <button class="menu-btn btn-boss-dummy" onpointerdown="selectBoss('dummy')">⚠️ 實戰：訓練人偶 PRO</button>
-        <button class="menu-btn btn-boss-mode" style="background-color: #c0392b;" onpointerdown="selectBoss('cleaner')">🤖 廢墟清掃者 (創新變速AI)</button>
-        <button class="menu-btn btn-boss-mode" style="background-color: #8e44ad;" onpointerdown="selectBoss('elite_cleaners')">⚔️ 雙子精英清掃者 (赫爾墨斯派遣)</button>
-        <button class="menu-btn btn-back" style="margin-top: 30px; margin-bottom: 40px;" onpointerdown="showScreen('screen-char')">重新選擇角色</button>
+        <button class="menu-btn btn-boss-tutorial" onclick="selectBoss('tutorial')">🔰 新手教學：基礎訓練</button>
+        <button class="menu-btn btn-boss-dummy" onclick="selectBoss('dummy')">⚠️ 實戰：訓練人偶 PRO</button>
+        <button class="menu-btn btn-boss-mode" style="background-color: #c0392b;" onclick="selectBoss('cleaner')">🤖 廢墟清掃者 (創新變速AI)</button>
+        <button class="menu-btn btn-boss-mode" style="background-color: #8e44ad;" onclick="selectBoss('elite_cleaners')">⚔️ 雙子精英清掃者 (赫爾墨斯派遣)</button>
+        <button class="menu-btn btn-back" style="margin-top: 30px; margin-bottom: 40px;" onclick="showScreen('screen-char')">重新選擇角色</button>
     </div>
 
     <div id="screen-battle" class="screen">
@@ -750,10 +750,10 @@
 
             document.getElementById('enemies-area').innerHTML = ''; 
             
-            if (selectedBoss === 'tutorial') { enemies = [ { id: 0, name: "正常訓練人偶", hp: 30, maxHp: 30, attack: 3, shield: false, isAlive: true, isCharging: false, lastMove: "" }, { id: 1, name: "基礎無人機", hp: 10, maxHp: 10, attack: 2, shield: false, isAlive: true, isCharging: false, lastMove: "" } ]; } 
-            else if (selectedBoss === 'dummy') { enemies = [ { id: 0, name: "訓練人偶PRO", hp: 50, maxHp: 50, attack: 4, shield: false, isAlive: true, isCharging: false, lastMove: "" }, { id: 1, name: "無人機僕從", hp: 15, maxHp: 15, attack: 2, shield: false, isAlive: true, isCharging: false, lastMove: "" } ]; } 
-            else if (selectedBoss === 'cleaner') { enemies = [ { id: 0, name: "廢墟清掃者", hp: 60, maxHp: 60, attack: 5, shield: false, isAlive: true, isCharging: false, lastMove: "" } ]; } 
-            else if (selectedBoss === 'elite_cleaners') { enemies = [ { id: 0, name: "精英清掃者 Alpha", hp: 45, maxHp: 45, attack: 5, shield: false, isAlive: true, isCharging: false, lastMove: "" }, { id: 1, name: "精英清掃者 Beta", hp: 45, maxHp: 45, attack: 5, shield: false, isAlive: true, isCharging: false, lastMove: "" } ]; }
+            if (selectedBoss === 'tutorial') { ui.msgBox.innerText = `【基礎教學程序啟動】\n請熟悉戰禦與攻擊的 QTE 節奏。`; enemies = [ { id: 0, name: "正常訓練人偶", hp: 30, maxHp: 30, attack: 3, shield: false, isAlive: true, isCharging: false, lastMove: "" }, { id: 1, name: "基礎無人機", hp: 10, maxHp: 10, attack: 2, shield: false, isAlive: true, isCharging: false, lastMove: "" } ]; } 
+            else if (selectedBoss === 'dummy') { ui.msgBox.innerText = `【實戰模式啟動】\n請注意變速與屬性攻擊！`; enemies = [ { id: 0, name: "訓練人偶PRO", hp: 50, maxHp: 50, attack: 4, shield: false, isAlive: true, isCharging: false, lastMove: "" }, { id: 1, name: "無人機僕從", hp: 15, maxHp: 15, attack: 2, shield: false, isAlive: true, isCharging: false, lastMove: "" } ]; } 
+            else if (selectedBoss === 'cleaner') { ui.msgBox.innerText = `無路可退！對決 廢墟清掃者！\n(警告：這台機器充滿了不穩定的故障！)`; enemies = [ { id: 0, name: "廢墟清掃者", hp: 60, maxHp: 60, attack: 5, shield: false, isAlive: true, isCharging: false, lastMove: "" } ]; } 
+            else if (selectedBoss === 'elite_cleaners') { ui.msgBox.innerText = `赫爾墨斯派出的兩台【精英清掃者】！\n(警告：對方擁有極高的攻擊頻率與破壞力！)`; enemies = [ { id: 0, name: "精英清掃者 Alpha", hp: 45, maxHp: 45, attack: 5, shield: false, isAlive: true, isCharging: false, lastMove: "" }, { id: 1, name: "精英清掃者 Beta", hp: 45, maxHp: 45, attack: 5, shield: false, isAlive: true, isCharging: false, lastMove: "" } ]; }
 
             // 雙人模式：敵方 HP 上限加倍 (1.25x)
             if (isMultiplayer) {
@@ -773,8 +773,6 @@
                 updateEnemyStatus(e);
             });
 
-            document.getElementById('potion-count').innerText = inventory.potion.count; document.getElementById('ether-count').innerText = inventory.ether.count; document.getElementById('antidote-count').innerText = inventory.antidote.count;
-
             ui.actionMenu.style.display = 'flex'; ui.skillMenu.style.display = 'none'; ui.itemMenu.style.display = 'none'; ui.targetMenu.style.display = 'none'; ui.qteArea.style.display = 'none'; ui.mashArea.style.display = 'none';
             activeEnemyIndex = 0; targetMoving = false; 
             showScreen('screen-battle');
@@ -785,11 +783,11 @@
                     mpTurnIndex = 0; // 0 = 1P回合
                     startMyTurn();
                 } else {
-                    waitForPeerTurn();
+                    waitForPeerTurn('1P');
                 }
             } else { 
                 document.getElementById('turn-indicator').style.display = 'none';
-                ui.msgBox.innerText = `戰鬥開始！輪到 ${player.name} 行動。`; 
+                ui.msgBox.innerText += `\n戰鬥開始！輪到 ${player.name} 行動。`; 
             }
         }
 
@@ -940,8 +938,11 @@
                 if (isStoryMode) { ui.msgBox.innerText = "戰鬥結束！成功擊退了敵人！"; setTimeout(() => { bgm.pause(); resumeStoryAfterBattle(); }, 2000); } 
                 else { ui.msgBox.innerText = "所有目標已被擊破！戰鬥勝利！\n(請重整網頁回到標題)"; bgm.pause(); } 
             } else { 
-                if (nextPhaseCallback) nextPhaseCallback();
-                else startEnemyPhase(); 
+                if (nextPhaseCallback) {
+                    nextPhaseCallback();
+                } else {
+                    if (!isMultiplayer) startEnemyPhase(); 
+                }
             } 
         }
 
@@ -949,7 +950,7 @@
             stopTurnTimer();
             if (isMultiplayer) {
                 if (isHost) setTimeout(advanceMultiplayerTurn, 1500);
-                else { sendGameData({ type: 'turn_ended' }); waitForPeerTurn(); }
+                else { sendGameData({ type: 'turn_ended' }); waitForPeerTurn('1P'); }
             } else {
                 setTimeout(startEnemyPhase, 1500);
             }
@@ -959,7 +960,7 @@
             stopTurnTimer();
             if (isMultiplayer) {
                 if (isHost) setTimeout(advanceMultiplayerTurn, 1500);
-                else { sendGameData({ type: 'defend_ended' }); waitForPeerTurn(); }
+                else { sendGameData({ type: 'defend_ended' }); waitForPeerTurn('1P'); }
             } else {
                 activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 1500);
             }
@@ -1023,6 +1024,7 @@
             else if (pendingAction === "defend") { let isPerfect = (cursorPosition >= perfectStart && cursorPosition <= perfectEnd); let isSuccess = (cursorPosition >= targetStart && cursorPosition <= targetStart + targetWidth); processDefendResult(isSuccess, isPerfect); }
         }
 
+        // 【通用傷害機制】與 WebRTC 同步
         function applyDamageToTarget(target, dmg) {
             let interruptMsg = "";
             if (target.isCharging && Math.random() < 0.3) { target.isCharging = false; updateEnemyStatus(target); dmg += 5; interruptMsg = `\n💥 弱點破壞！成功打斷了 ${target.name} 的蓄力！追加 5 點傷害！`; playSound('skill'); }
@@ -1124,7 +1126,7 @@
             startTurnTimer();
         }
 
-        function waitForPeerTurn() {
+        function waitForPeerTurn(turnOwner = '') {
             closeSubMenus(); ui.actionMenu.style.display = 'none'; stopTurnTimer();
             let ind = document.getElementById('turn-indicator');
             if (ind) { ind.style.display = 'block'; ind.innerText = "🔴 隊友的回合"; ind.style.borderColor = "#3498db"; ind.style.color = "#3498db"; }
@@ -1144,7 +1146,7 @@
             sendGameData({ type: 'set_turn', phase: nextPhase });
             
             if (nextPhase === '1P') { startMyTurn(); } 
-            else if (nextPhase === '2P') { waitForPeerTurn(); } 
+            else if (nextPhase === '2P') { waitForPeerTurn('2P'); } 
             else if (nextPhase === 'Enemy') { executeMultiplayerEnemyTurn(); }
         }
 
@@ -1247,8 +1249,8 @@
                     }
                 }
             } else if (data.type === 'set_turn') {
-                if (data.phase === '1P') { if (isHost) startMyTurn(); else waitForPeerTurn(); } 
-                else if (data.phase === '2P') { if (!isHost) startMyTurn(); else waitForPeerTurn(); } 
+                if (data.phase === '1P') { if (isHost) startMyTurn(); else waitForPeerTurn('1P'); } 
+                else if (data.phase === '2P') { if (!isHost) startMyTurn(); else waitForPeerTurn('2P'); } 
                 else if (data.phase === 'Enemy') { setEnemyTurnUI(); ui.msgBox.innerText = "敵方行動中..."; }
             } else if (data.type === 'enemy_attack' && !isHost) {
                 let targetEnemy = enemies.find(e => e.id === data.enemyId);
