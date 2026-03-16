@@ -30,7 +30,7 @@
         .scrollable-screen {
             justify-content: flex-start !important; 
             overflow-y: auto;
-            touch-action: pan-y !important; /* 確保手機可以上下滑動 */
+            touch-action: pan-y !important; 
             max-height: 95vh;
             padding-top: 30px;
             padding-bottom: 50px;
@@ -54,7 +54,7 @@
         .btn-boss-dummy { background-color: #c0392b; }
         .btn-boss-tutorial { background-color: #27ae60; } 
 
-        /* 🌐 WebRTC 連線介面專屬樣式 (防手機擠壓) */
+        /* 🌐 WebRTC 連線介面 */
         .webrtc-panel { width: 90%; max-width: 500px; text-align: left; flex-shrink: 0; height: auto; margin-bottom: 20px; box-sizing: border-box; }
         .webrtc-textarea { width: 100%; height: 45px; margin-top: 10px; margin-bottom: 5px; background: #222; color: #2ecc71; border: 1px solid #555; border-radius: 5px; padding: 10px; box-sizing: border-box; resize: none; font-size: 12px; font-family: monospace; word-break: break-all; -webkit-user-select: text; user-select: text; }
 
@@ -68,8 +68,6 @@
         
         #story-choices { display: none; justify-content: center; gap: 15px; margin-top: 15px; flex-wrap: wrap;}
         .story-btn { background-color: #3498db; color: #fff; padding: 10px 20px; font-size: 16px; border: 2px solid #fff; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .story-btn.disabled { background-color: #555; color: #888; border-color: #777; cursor: not-allowed; }
-        .story-btn:not(.disabled):active { transform: scale(0.9); }
 
         /* 戰鬥與狀態樣式 */
         .battle-stage { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 20px; width: 100%; max-width: 600px;}
@@ -83,7 +81,6 @@
         
         .ui-panel { border: 2px solid #aaa; padding: 15px; width: 90%; max-width: 450px; margin: 0 auto; border-radius: 10px; background-color: #1e1e1e; min-height: 160px; position: relative;}
         #message-box { font-size: 15px; margin-bottom: 15px; color: #feca57; min-height: 40px; white-space: pre-line; }
-        
         button { padding: 8px 12px; font-size: 15px; cursor: pointer; border-radius: 5px; border: none; font-weight: bold; margin: 4px; }
         
         #action-menu { display: flex; flex-wrap: wrap; justify-content: center; }
@@ -100,7 +97,6 @@
         .qte-target-aoe { position: absolute; height: 100%; width: 10%; background-color: #2ecc71; display: none; }
         .qte-cursor { position: absolute; left: 0%; width: 6px; height: 100%; background-color: #fff; box-shadow: 0 0 5px #fff; z-index: 3; transition: opacity 0.1s; }
         #qte-cursor-2, #qte-cursor-3 { display: none; } 
-        
         .blind-mode .qte-target-main, .blind-mode .qte-target-perfect, .blind-mode .qte-target-aoe { opacity: 0 !important; }
         
         .mash-bar-container { width: 100%; height: 25px; background-color: #333; border: 2px solid #fff; border-radius: 15px; overflow: hidden; margin-bottom: 10px; position: relative; }
@@ -111,30 +107,26 @@
         
         #action-btn, #hold-btn { background-color: #ff9f43; color: #fff; transform: scale(1.1); padding: 12px 30px; font-size: 18px; display: inline-block;}
         #action-btn:active { transform: scale(0.9); }
-        #hold-btn:active { transform: scale(0.95); box-shadow: 0 0 15px #f39c12; }
-
-        /* 雙色 QTE 專用按鈕 */
         #dual-btn-container { display: none; justify-content: center; gap: 20px; }
         .dual-btn { color: #fff; padding: 12px 30px; font-size: 18px; border-radius: 10px; border: 2px solid #fff; font-weight: bold; cursor: pointer; transition: transform 0.1s; }
         .dual-btn:active { transform: scale(0.9); }
         #dual-btn-red { background-color: #e74c3c; box-shadow: 0 0 10px #e74c3c; }
         #dual-btn-blue { background-color: #3498db; box-shadow: 0 0 10px #3498db; }
 
-        /* 逃跑與雷射小遊戲 */
+        /* 小遊戲 */
         .minigame-screen { background-color: #1a1a1a; }
         .run-status-panel { background: rgba(0,0,0,0.8); border: 2px solid #e74c3c; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; margin-bottom: 30px; }
         .run-title { color: #e74c3c; font-size: 22px; margin-top: 0; text-shadow: 0 0 10px #e74c3c; animation: blink 1s infinite;}
         .run-info { font-size: 18px; margin: 10px 0; }
         .minigame-btn { background-color: #3498db; color: #fff; padding: 15px 40px; font-size: 20px; border-radius: 10px; font-weight: bold; margin-top: 10px; border: none; cursor: pointer; }
-        .minigame-btn:active { transform: scale(0.9); }
     </style>
 </head>
 <body>
 
     <div id="screen-menu" class="screen active">
         <h1 class="menu-title">星空彼方的約定<br><span style="font-size:18px; color:#aaa;">QTE 戰鬥模擬器</span></h1>
-        <button class="menu-btn btn-story" onpointerdown="showScreen('screen-story-select')">📖 劇情模式</button>
-        <button class="menu-btn btn-boss-mode" onpointerdown="showScreen('screen-char')">⚔️ 單人挑戰模式</button>
+        <button class="menu-btn btn-story" onclick="showScreen('screen-story-select')">📖 劇情模式</button>
+        <button class="menu-btn btn-boss-mode" onclick="showScreen('screen-char')">⚔️ 單人挑戰模式</button>
         <button class="menu-btn" style="background-color: #27ae60;" onclick="showScreen('screen-webrtc')">🌐 雙人連線共鬥</button>
     </div>
 
@@ -168,7 +160,7 @@
             <h3 id="lobby-p1-status" style="color: #2ecc71;">1P (房主): 尚未選擇</h3>
             <h3 id="lobby-p2-status" style="color: #3498db;">2P: 尚未選擇</h3>
             <div id="lobby-msg" style="color: #aaa; margin-top: 20px; font-size: 16px;">等待雙方確認角色...</div>
-            <button id="btn-start-multiplayer" class="minigame-btn" style="background-color: #e74c3c; display: none; margin-top: 20px;" onpointerdown="showScreen('screen-boss')">房主：選擇討伐目標</button>
+            <button id="btn-start-multiplayer" class="minigame-btn" style="background-color: #e74c3c; display: none; margin-top: 20px;" onclick="showScreen('screen-boss')">房主：選擇討伐目標</button>
         </div>
     </div>
 
@@ -227,10 +219,10 @@
 
     <div id="screen-char" class="screen">
         <h2 class="menu-subtitle">選擇出戰角色</h2>
-        <button class="menu-btn btn-char-bredeia" onpointerdown="selectCharacter('bredeia')">布蕾蒂雅 (破甲/群星)</button>
-        <button class="menu-btn btn-char-nagito" onpointerdown="selectCharacter('nagito')">鈴仙凪人 (三連斬/一閃/反擊)</button>
-        <button class="menu-btn btn-char-tsukito" onpointerdown="selectCharacter('tsukito')">鈴仙月兔 (連踢/蓄力)</button>
-        <button class="menu-btn btn-back" style="margin-top: 30px;" onpointerdown="showScreen('screen-menu')">返回標題</button>
+        <button class="menu-btn btn-char-bredeia" onclick="selectCharacter('bredeia')">布蕾蒂雅 (破甲/群星)</button>
+        <button class="menu-btn btn-char-nagito" onclick="selectCharacter('nagito')">鈴仙凪人 (三連斬/一閃/反擊)</button>
+        <button class="menu-btn btn-char-tsukito" onclick="selectCharacter('tsukito')">鈴仙月兔 (連踢/蓄力)</button>
+        <button class="menu-btn btn-back" style="margin-top: 30px;" onclick="showScreen('screen-menu')">返回標題</button>
     </div>
 
     <div id="screen-boss" class="screen scrollable-screen">
@@ -277,7 +269,7 @@
                 <button class="btn-item" onpointerdown="playSound('heal'); useItem('potion')">回復藥 (<span id="potion-count">5</span>)</button>
                 <button class="btn-item" onpointerdown="playSound('heal'); useItem('ether')">魔法水 (<span id="ether-count">5</span>)</button>
                 <button class="btn-item" onpointerdown="playSound('heal'); useItem('antidote')">解毒草 (<span id="antidote-count">3</span>)</button>
-                <button class="btn-back" onpointerdown="playSound('cancel'); closeSubMenus()">返回</button>
+                <button class="btn-back" onclick="playSound('cancel'); closeSubMenus()">返回</button>
             </div>
 
             <div id="qte-area">
@@ -662,7 +654,7 @@
             let line = storyScript[currentStoryIndex];
             if (line.choices) {
                 ui.storyHint.style.display = 'none'; let html = "";
-                line.choices.forEach((c, idx) => { if (c.valid) html += `<button class="story-btn" onpointerdown="chooseOption(event, ${idx})">${c.text}</button>`; else html += `<button class="story-btn disabled" onpointerdown="rejectOption(event)">${c.text}</button>`; });
+                line.choices.forEach((c, idx) => { if (c.valid) html += `<button class="story-btn" onclick="chooseOption(event, ${idx})">${c.text}</button>`; else html += `<button class="story-btn disabled" onclick="rejectOption(event)">${c.text}</button>`; });
                 ui.storyChoices.innerHTML = html; ui.storyChoices.style.display = 'flex';
             } else { ui.storyHint.style.display = 'block'; }
         }
@@ -695,9 +687,8 @@
             playSound('click'); 
             selectedChar = charId; 
             myChar = charId;
-            isStoryMode = false;
 
-            // 【修復】：加入 400 毫秒的轉場緩衝，防止手指離開螢幕時誤觸選王介面的按鈕
+            // 【完全修復穿透點擊】：加入轉場緩衝時間
             setTimeout(() => {
                 if (isMultiplayer) {
                     showScreen('screen-lobby');
@@ -708,7 +699,7 @@
                 } else {
                     showScreen('screen-boss'); 
                 }
-            }, 400);
+            }, 300);
         }
 
         function checkLobbyReady() {
@@ -726,14 +717,13 @@
             playSound('click'); 
             selectedBoss = bossId; 
             
-            // 【修復】：同樣加入轉場緩衝，讓進入戰鬥時不會誤觸攻擊
             setTimeout(() => {
                 if (isMultiplayer && isHost) {
                     sendGameData({ type: 'start_battle', bossId: bossId });
                 }
                 changeBGM(selectedBoss); 
                 startBattle(); 
-            }, 400);
+            }, 300);
         }
 
         function startBattle() {
@@ -766,7 +756,7 @@
                 ui.skillMenu.innerHTML += `<button class="btn-skill" style="background-color:#e056fd" onpointerdown="playSound('click'); startAction('moonCombo')">月影連環踢 (4 SP)</button>`;
                 ui.skillMenu.innerHTML += `<button class="btn-aoe" style="background-color:#f39c12" onpointerdown="playSound('click'); startAction('moonHold')">月華爆發 (6 SP)</button>`;
             }
-            ui.skillMenu.innerHTML += `<button class="btn-back" onpointerdown="playSound('cancel'); closeSubMenus()">返回</button>`;
+            ui.skillMenu.innerHTML += `<button class="btn-back" onclick="playSound('cancel'); closeSubMenus()">返回</button>`;
 
             document.getElementById('enemies-area').innerHTML = ''; 
             
@@ -853,13 +843,12 @@
         function openSkillMenu() { ui.actionMenu.style.display = 'none'; ui.skillMenu.style.display = 'block'; ui.msgBox.innerText = "請選擇技能。"; }
         function openItemMenu() { ui.actionMenu.style.display = 'none'; ui.itemMenu.style.display = 'block'; ui.msgBox.innerText = "請選擇道具。"; }
         
-        // 【修復】：加入防呆保護，避免在別人的回合手動打開選單
+        // 【修復】：嚴格鎖死按鈕權限，避免在等待隊友時自己打開選單
         function closeSubMenus() { 
             ui.skillMenu.style.display = 'none'; 
             ui.itemMenu.style.display = 'none'; 
             ui.targetMenu.style.display = 'none'; 
             
-            // 只有在自己的回合時，才允許把動作選單彈出來
             if (!isMultiplayer || (isHost && mpTurnIndex === 0) || (!isHost && mpTurnIndex === 2)) {
                 ui.actionMenu.style.display = 'flex'; 
                 ui.msgBox.innerText = "請選擇行動。"; 
@@ -890,8 +879,8 @@
             if (action === 'moonHold') { player.sp -= aoeCost; ui.playerSp.innerText = player.sp; configureQteZones('moonHold'); setupQteUI("hold", "按住蓄力！", "#f39c12", `準備施展【月華爆發】！\n(按住不放，看準時機鬆開)`); return; }
 
             ui.targetMenu.style.display = 'block'; ui.msgBox.innerText = "請選擇目標："; ui.targetBtns.innerHTML = '';
-            enemies.forEach((en, idx) => { if (en.isAlive) { let btn = document.createElement('button'); btn.className = 'btn-attack'; btn.innerText = en.name; btn.onpointerdown = () => { confirmTarget(idx); }; ui.targetBtns.appendChild(btn); } });
-            let backBtn = document.createElement('button'); backBtn.className = 'btn-back'; backBtn.innerText = "返回"; backBtn.onpointerdown = () => { playSound('cancel'); closeSubMenus(); }; ui.targetBtns.appendChild(backBtn);
+            enemies.forEach((en, idx) => { if (en.isAlive) { let btn = document.createElement('button'); btn.className = 'btn-attack'; btn.innerText = en.name; btn.onclick = () => { confirmTarget(idx); }; ui.targetBtns.appendChild(btn); } });
+            let backBtn = document.createElement('button'); backBtn.className = 'btn-back'; backBtn.innerText = "返回"; backBtn.onclick = () => { playSound('cancel'); closeSubMenus(); }; ui.targetBtns.appendChild(backBtn);
         }
 
         function confirmTarget(index) {
@@ -1042,7 +1031,7 @@
             if (isPerfect && player.counterStance) { playSound('skill'); let counterDmg = 5 + baseAttackDmg; ui.msgBox.innerText = `✨ 完美見切！${player.name} 彈開了攻擊\n對 ${attacker.name} 發動反擊造成 ${counterDmg} 點傷害！`; attacker.hp = Math.max(attacker.hp - counterDmg, 0); document.getElementById(`enemy-${attacker.id}-hp`).innerText = attacker.hp; if (isMultiplayer) sendGameData({ type: 'action', skill: '完美見切', damage: counterDmg, targetId: attacker.id, currentHp: attacker.hp }); if (attacker.hp === 0) { attacker.isAlive = false; let box = document.getElementById(`enemy-${attacker.id}-box`); box.style.transform = 'scale(0)'; box.style.opacity = '0'; setTimeout(() => { box.style.display = 'none'; checkWinCondition(finishDefendPhase); }, 500); } return; }
             let dmgTaken = 0;
             if (isPerfect) { playSound('guard'); ui.msgBox.innerText = `💫 極限閃避！受到 0 點傷害。`; dmgTaken = 0; } else if (isSuccess) { playSound('guard'); dmgTaken = Math.max(baseAttackDmg - qteBonus, 0); if (currentEnemyAttack.isUltimate) dmgTaken = Math.floor(baseAttackDmg / 2); ui.msgBox.innerText = `🛡️ 成功防禦！受到了 ${dmgTaken} 點傷害。`; } else { playSound('miss'); dmgTaken = baseAttackDmg; ui.msgBox.innerText = `💥 命中！受到了 ${dmgTaken} 點傷害。`; if (player.counterStance) ui.msgBox.innerText += `\n(見切失敗，破綻大開！)`; }
-            if (currentEnemyAttack.appliesPoison && !isPerfect && !player.poisoned) { player.poisoned = true; updatePlayerStatus(); ui.msgBox.innerText += `\n${player.name} 受到異常狀態干擾！`; }
+            if (currentEnemyAttack.appliesPoison && !player.poisoned) { player.poisoned = true; updatePlayerStatus(); ui.msgBox.innerText += `\n${player.name} 受到異常狀態干擾！`; }
             updateMyHp(player.hp - dmgTaken);
             if (player.hp === 0 && (!isMultiplayer || peerData.hp <= 0)) { setTimeout(() => { ui.msgBox.innerText = `全隊覆沒... 戰鬥失敗。`; bgm.pause(); stopTurnTimer(); }, 1500); return; }
             if (player.hp === 0 && isMultiplayer) { ui.msgBox.innerText += `\n${player.name} 倒下了...只能靠隊友了！`; setTimeout(finishDefendPhase, 1500); return;}
@@ -1323,7 +1312,7 @@
                             target.isAlive = false; 
                             let box = document.getElementById(`enemy-${target.id}-box`); 
                             if(box) { box.style.transform = 'scale(0)'; box.style.opacity = '0'; } 
-                            setTimeout(() => { if(box) box.style.display = 'none'; checkWinCondition(); }, 500); 
+                            setTimeout(() => { if(box) box.style.display = 'none'; checkWinCondition(finishMyAction); }, 500); 
                         }
                     }
                 }
@@ -1349,7 +1338,7 @@
             }
         }
 
-        // 📋 一鍵複製功能 (改為按鈕文字提示)
+        // 📋 一鍵複製功能
         function copyToClipboard(elementId, btnElement) {
             playSound('click'); 
             const textToCopy = document.getElementById(elementId).value;
@@ -1373,4 +1362,4 @@
     </script>
 </body>
 </html>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     <div id="
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              <div id="
