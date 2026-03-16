@@ -80,6 +80,8 @@
             font-size: 12px; 
             font-family: monospace;
             word-break: break-all;
+            -webkit-user-select: text; /* 確保輸入框可以手動選取文字 */
+            user-select: text;
         }
 
         /* AVG 劇情模式 */
@@ -92,8 +94,10 @@
         
         #story-choices { display: none; justify-content: center; gap: 15px; margin-top: 15px; flex-wrap: wrap;}
         .story-btn { background-color: #3498db; color: #fff; padding: 10px 20px; font-size: 16px; border: 2px solid #fff; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .story-btn.disabled { background-color: #555; color: #888; border-color: #777; cursor: not-allowed; }
+        .story-btn:not(.disabled):active { transform: scale(0.9); }
 
-        /* 戰鬥樣式 */
+        /* 戰鬥與狀態樣式 */
         .battle-stage { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 20px; width: 100%; max-width: 600px;}
         .character-box { border: 2px solid #ccc; border-radius: 10px; padding: 10px; width: 130px; background-color: #3a3a3a; transition: all 0.5s ease; transform-origin: center; }
         .enemies-container { display: flex; flex-direction: column; gap: 10px; }
@@ -105,6 +109,7 @@
         
         .ui-panel { border: 2px solid #aaa; padding: 15px; width: 90%; max-width: 450px; margin: 0 auto; border-radius: 10px; background-color: #1e1e1e; min-height: 160px; position: relative;}
         #message-box { font-size: 15px; margin-bottom: 15px; color: #feca57; min-height: 40px; white-space: pre-line; }
+        
         button { padding: 8px 12px; font-size: 15px; cursor: pointer; border-radius: 5px; border: none; font-weight: bold; margin: 4px; }
         
         #action-menu { display: flex; flex-wrap: wrap; justify-content: center; }
@@ -122,22 +127,32 @@
         .qte-cursor { position: absolute; left: 0%; width: 6px; height: 100%; background-color: #fff; box-shadow: 0 0 5px #fff; z-index: 3; transition: opacity 0.1s; }
         #qte-cursor-2, #qte-cursor-3 { display: none; } 
         
+        .blind-mode .qte-target-main, .blind-mode .qte-target-perfect, .blind-mode .qte-target-aoe { opacity: 0 !important; }
+        
         .mash-bar-container { width: 100%; height: 25px; background-color: #333; border: 2px solid #fff; border-radius: 15px; overflow: hidden; margin-bottom: 10px; position: relative; }
         #mash-fill { width: 0%; height: 100%; background-color: #9b59b6; box-shadow: 0 0 10px #9b59b6; transition: width 0.1s; }
         #mash-timer-text { font-size: 18px; font-weight: bold; color: #fff; margin-bottom: 10px; }
         #mash-btn { background-color: #9b59b6; color: #fff; padding: 15px 40px; font-size: 20px; border-radius: 50px; }
+        #mash-btn:active { transform: scale(0.9); background-color: #8e44ad; }
         
         #action-btn, #hold-btn { background-color: #ff9f43; color: #fff; transform: scale(1.1); padding: 12px 30px; font-size: 18px; display: inline-block;}
+        #action-btn:active { transform: scale(0.9); }
+        #hold-btn:active { transform: scale(0.95); box-shadow: 0 0 15px #f39c12; }
+
+        /* 雙色 QTE 專用按鈕 */
         #dual-btn-container { display: none; justify-content: center; gap: 20px; }
         .dual-btn { color: #fff; padding: 12px 30px; font-size: 18px; border-radius: 10px; border: 2px solid #fff; font-weight: bold; cursor: pointer; transition: transform 0.1s; }
+        .dual-btn:active { transform: scale(0.9); }
         #dual-btn-red { background-color: #e74c3c; box-shadow: 0 0 10px #e74c3c; }
         #dual-btn-blue { background-color: #3498db; box-shadow: 0 0 10px #3498db; }
 
+        /* 逃跑與雷射小遊戲 */
         .minigame-screen { background-color: #1a1a1a; }
         .run-status-panel { background: rgba(0,0,0,0.8); border: 2px solid #e74c3c; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; margin-bottom: 30px; }
         .run-title { color: #e74c3c; font-size: 22px; margin-top: 0; text-shadow: 0 0 10px #e74c3c; animation: blink 1s infinite;}
         .run-info { font-size: 18px; margin: 10px 0; }
         .minigame-btn { background-color: #3498db; color: #fff; padding: 15px 40px; font-size: 20px; border-radius: 10px; font-weight: bold; margin-top: 10px; border: none; cursor: pointer; }
+        .minigame-btn:active { transform: scale(0.9); }
     </style>
 </head>
 <body>
@@ -150,29 +165,29 @@
     </div>
 
     <div id="screen-webrtc" class="screen scrollable-screen">
-        <button class="menu-btn btn-back" style="margin: 0 0 15px 0; padding: 8px 20px; font-size: 16px; width: auto; align-self: flex-start;" onpointerdown="showScreen('screen-menu')">← 返回標題</button>
+        <button class="menu-btn btn-back" style="margin: 0 0 15px 0; padding: 8px 20px; font-size: 16px; width: auto; align-self: flex-start;" onclick="showScreen('screen-menu')">← 返回標題</button>
         <h2 class="menu-subtitle" style="color: #2ecc71; margin-top: 0;">終端機連線系統 (P2P)</h2>
         
         <div class="ui-panel webrtc-panel">
             <h3 style="color: #f1c40f; margin-top: 0; font-size: 18px;">▶ 1P (房主) 建立連線</h3>
-            <button class="minigame-btn" style="background-color: #e67e22; padding: 8px 15px; font-size: 16px;" onpointerdown="createHost()">1. 產生邀請碼</button>
+            <button class="minigame-btn" style="background-color: #e67e22; padding: 8px 15px; font-size: 16px;" onclick="createHost()">1. 產生邀請碼</button>
             <textarea id="local-sdp" class="webrtc-textarea" placeholder="系統將在此產生..." readonly></textarea>
-            <button class="minigame-btn" style="background-color: #8e44ad; padding: 6px 12px; font-size: 14px; width: 100%; margin-top: 0;" onpointerdown="copyToClipboard('local-sdp', this)">📋 一鍵複製邀請碼</button>
+            <button class="minigame-btn" style="background-color: #8e44ad; padding: 6px 12px; font-size: 14px; width: 100%; margin-top: 0;" onclick="copyToClipboard('local-sdp', this)">📋 一鍵複製邀請碼</button>
             
             <textarea id="remote-answer" class="webrtc-textarea" placeholder="請在此貼上 2P 的【回應碼】"></textarea>
-            <button class="minigame-btn" style="background-color: #27ae60; padding: 8px 15px; font-size: 16px;" onpointerdown="connectHost()">3. 確認連線</button>
+            <button class="minigame-btn" style="background-color: #27ae60; padding: 8px 15px; font-size: 16px;" onclick="connectHost()">3. 確認連線</button>
         </div>
 
         <div class="ui-panel webrtc-panel">
             <h3 style="color: #3498db; margin-top: 0; font-size: 18px;">▶ 2P 加入連線</h3>
             <textarea id="remote-offer" class="webrtc-textarea" placeholder="請貼上 1P 的【邀請碼】"></textarea>
-            <button class="minigame-btn" style="background-color: #3498db; padding: 8px 15px; font-size: 16px;" onpointerdown="joinGame()">2. 接受邀請</button>
+            <button class="minigame-btn" style="background-color: #3498db; padding: 8px 15px; font-size: 16px;" onclick="joinGame()">2. 接受邀請</button>
             <textarea id="local-answer" class="webrtc-textarea" placeholder="系統將在此產生..." readonly></textarea>
-            <button class="minigame-btn" style="background-color: #8e44ad; padding: 6px 12px; font-size: 14px; width: 100%; margin-top: 0;" onpointerdown="copyToClipboard('local-answer', this)">📋 一鍵複製回應碼</button>
+            <button class="minigame-btn" style="background-color: #8e44ad; padding: 6px 12px; font-size: 14px; width: 100%; margin-top: 0;" onclick="copyToClipboard('local-answer', this)">📋 一鍵複製回應碼</button>
         </div>
 
         <div id="connection-status" style="font-size: 16px; color: #aaa; font-weight: bold; margin-top: 5px;">狀態：等待連線中...</div>
-        <button id="btn-goto-char" class="menu-btn btn-boss-mode" style="display: none; margin-top: 20px; background-color: #e74c3c;" onpointerdown="showScreen('screen-char')">進入角色選擇 →</button>
+        <button id="btn-goto-char" class="menu-btn btn-boss-mode" style="display: none; margin-top: 20px; background-color: #e74c3c;" onclick="showScreen('screen-char')">進入角色選擇 →</button>
     </div>
 
     <div id="screen-lobby" class="screen">
@@ -195,6 +210,9 @@
         <button class="menu-btn" style="background-color: #8e44ad; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(4)">第一幕：夢境與啟程</button>
         <button class="menu-btn" style="background-color: #9b59b6; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(5)">第二幕：廢墟遭遇戰</button>
         <button class="menu-btn" style="background-color: #2980b9; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(6)">第三幕：廢棄實驗室</button> 
+        <button class="menu-btn" style="background-color: #1abc9c; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(7)">第四幕：沉寂之心</button>
+        <button class="menu-btn" style="background-color: #16a085; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(8)">第五幕：密室陷阱</button>
+        <button class="menu-btn" style="background-color: #f39c12; padding: 10px 20px; font-size: 16px;" onpointerdown="loadChapter(9)">第六幕：中央都市的交鋒</button>
         <button class="menu-btn btn-back" style="margin-top: 30px; margin-bottom: 40px;" onpointerdown="showScreen('screen-menu')">返回標題</button>
     </div>
 
@@ -328,23 +346,276 @@
         function playSound(type) { if(sfx[type]) { sfx[type].currentTime = 0; sfx[type].play().catch(e => {}); } }
 
         // ==========================================
-        // 📖 劇本資料庫系統 (節錄避免過長)
+        // 📖 完整劇本資料庫系統
         // ==========================================
-        function getPart1() { return [{ speaker: "布蕾蒂雅", text: "一切的起因，便是源自於那個祭典的夜晚。", bg: "#1a1a2e" }, { speaker: "布蕾蒂雅", text: "那個少年，「鈴仙凪人」，將會在未來經歷一場難以想像的冒險。", bg: "#1a1a2e" }, { speaker: "布蕾蒂雅", text: "雖然我很想立刻讓你開始身為紀錄者的旅行，但看在你剛經歷那起事件的份上，我建議你先好好休息吧。", bg: "#0a0a2a", nextChapter: 2 }]; }
-        function getPart2() { return [ { speaker: "布蕾蒂雅", text: "看來你似乎休息好了。\n不過在開始你的旅途之前，我有義務測試一下你的戰鬥能力。", bg: "#0a0a2a" }, { speaker: "布蕾蒂雅", text: "那你需要新手教學嗎？", bg: "#0a0a2a", choices: [ {text: "需要", valid: true, boss: "tutorial"}, {text: "不需要", valid: true, boss: "dummy"} ] } ]; }
-        function getPart3(bossDefeated) { return [{ speaker: "布蕾蒂雅", text: "既然暖身完畢，那就可以正式開始你的第一次旅途了。", bg: "#0a0a2a" }, { speaker: "", text: "【序章：星空彼方的約定 —— 完】\n(點擊螢幕返回主選單)", bg: "#1a1a2e" }]; }
-        function getChapter1_Part1() { return [{ speaker: "清掃者", text: "【警告：偵測到未註冊生命體。開始執行清除程序。】", bg: "#300" }, { speaker: "系統", text: "【突發事件：清掃者的追擊！】\n準備進行連續 10 次的極限迴避！", bg: "#000", action: "run_minigame" }];}
-        function getChapter1_Part2() { return [{ speaker: "系統", text: "無路可退！請選擇迎戰的對象：", bg: "#1a1a2e", choices: [ { text: "鈴仙凪人 (拔刀迎擊)", valid: true, boss: "cleaner", char: "nagito" }, { text: "鈴仙月兔 (飛踢出擊)", valid: true, boss: "cleaner", char: "tsukito" } ] }];}
-        function getChapter1_Part3() { return [{ speaker: "鈴仙凪人", text: "呼……終於結束了嗎？", bg: "#1c1c1c" }, { speaker: "", text: "【第一章：永夜之城 —— 待續】", bg: "#000", textColor: "#aaa" }];}
-        function getChapter1_Part4() { return [{ speaker: "艾拉露恩", text: "我的名字是艾拉露恩。你大概在十天之內就會因為毒發而死。若你還想活著，就得在我手下賣力工作。", bg: "#1a252c" }, { speaker: "", text: "【第一章：永夜之城 —— 第三幕 完】", bg: "#1a1a2e", nextChapter: 7 }];}
-        function getChapter1_Part5() { return [{ speaker: "系統", text: "【突發事件：穿越致命雷射網！】\n看準綠色安全區前進，避免觸發高溫雷射！", bg: "#111", action: "laser_minigame" }];}
-        function getChapter1_Part6() { return [{ speaker: "鈴仙凪人", text: "糟了！果不其然是陷阱！", bg: "#2e4053" }, { speaker: "", text: "（數小時後...）", bg: "#000", textColor: "#aaa", nextChapter: 9 }];}
-        function getChapter1_Part7() { return [{ speaker: "赫爾墨斯", text: "騙你對我沒有好處。", bg: "#0a0a1a" }, { speaker: "系統", text: "是否要收下赫爾墨斯的解藥？", bg: "#1a1a2e", choices: [ { text: "答應 (收下解藥)", valid: true, nextChapter: 10 }, { text: "不答應 (拒絕提議)", valid: true, nextChapter: 11 } ]}];}
-        function getChapter1_BadEnd() { return [{ speaker: "系統", text: "【BAD END：虛假的自由】\n(點擊螢幕回到主選單)", bg: "#300", textColor: "#ff6b6b" } ];}
-        function getChapter1_Part8() { return [{ speaker: "系統", text: "【切換戰鬥模式：對決 雙子精英清掃者】", bg: "#900", choices: [ { text: "鈴仙凪人 (拔刀迎擊)", valid: true, boss: "elite_cleaners", char: "nagito" }, { text: "鈴仙月兔 (飛踢出擊)", valid: true, boss: "elite_cleaners", char: "tsukito" } ]}];}
+        function getPart1() {
+            return [
+                { speaker: "", text: "在一個昏暗的場景，一名銀髮少女坐在沙發上翻閱著某本書籍。", bg: "#1a1a2e" },
+                { speaker: "", text: "突然，她好像察覺到了什麼，並闔上了書本。", bg: "#1a1a2e" },
+                { speaker: "布蕾蒂雅", text: "一切的起因，便是源自於那個祭典的夜晚。", bg: "#1a1a2e" },
+                { speaker: "布蕾蒂雅", text: "或許你們早就知道這個故事，不過我可不會在乎那麼多。\n畢竟你們都來看了，就當作你們沒看過吧。", bg: "#1a1a2e" },
+                { speaker: "布蕾蒂雅", text: "那個少年，「鈴仙凪人」，將會在未來經歷一場難以想像的冒險。", bg: "#1a1a2e" },
+                { speaker: "布蕾蒂雅", text: "唉，要是我能夠講得更具體點就好了，畢竟我現在實在是很懶得說那麼多的話。", bg: "#1a1a2e" },
+                { speaker: "", text: "（場景一轉，來到了一處祭典上）\n鈴仙凪人正漫步在其中。", bg: "#2c3e50" }, 
+                { speaker: "", text: "他似乎想融入進去，但是卻絲毫沒什麼興趣。", bg: "#2c3e50" },
+                { speaker: "", text: "他來到了遠離祭典的一個偏僻山丘上眺望著遠景，思考著自己這麼做究竟是為何。", bg: "#112233" }, 
+                { speaker: "", text: "他依稀記得自己似乎要代替誰，完成誰的願望，去好好見證這個世界。", bg: "#112233" },
+                { speaker: "", text: "可是一嘗試回想起，自己的頭便頭痛欲裂。", bg: "#112233" },
+                { speaker: "", text: "（這時，一個聲音響起）", bg: "#112233" },
+                { speaker: "？？？", text: "真是難看，鈴仙凪人。", bg: "#112233" },
+                { speaker: "鈴仙凪人", text: "怎麼有跟蹤狂？", bg: "#112233" },
+                { speaker: "？？？", text: "真是沒禮貌，我的名字是布蕾蒂雅。", bg: "#112233" },
+                { speaker: "鈴仙凪人", text: "喔，不是等等，妳又是從哪知道我的名字的？", bg: "#112233" },
+                { speaker: "布蕾蒂雅", text: "這不重要，鈴仙凪人。\n重點是你現在所處的世界很快就要迎來毀滅了。", bg: "#112233" },
+                { speaker: "", text: "鈴仙凪人感到疑惑。就在這時，一顆流星劃過，降落到了地面。\n就像是水滴融入水中泛起波紋一樣。", bg: "#112233" },
+                { speaker: "", text: "接著整個世界開始崩裂，白光迸發。", bg: "#ecf0f1" }, 
+                { speaker: "鈴仙凪人", text: "這是怎麼一回事！", bg: "#4a4a4a", textColor: "#000" }, 
+                { speaker: "布蕾蒂雅", text: "我說過了吧，你的世界會迎來毀滅。", bg: "#4a4a4a" },
+                { speaker: "鈴仙凪人", text: "（要是自己在這裡就結束的話，自己就不能完成那個誰的願望了...）", bg: "#4a4a4a" },
+                { speaker: "", text: "布蕾蒂雅在這時向他伸出手。", bg: "#4a4a4a" },
+                { speaker: "布蕾蒂雅", text: "抓住我的手，如果你還想活下去的話。", bg: "#4a4a4a" },
+                { speaker: "", text: "鈴仙凪人很清楚這一抓住就會迎來什麼樣的展開，但他已經做好覺悟了。\n他伸手抓住布蕾蒂雅的手，布蕾蒂雅倒是挺滿意的。", bg: "#4a4a4a" },
+                { speaker: "布蕾蒂雅", text: "看來，你似乎做好覺悟了。", bg: "#4a4a4a" },
+                { speaker: "", text: "與此同時，「星之門」在布蕾蒂雅背後展開，兩人雙雙穿越了進去...", bg: "#000000" },
+                { speaker: "", text: "（穿過無盡的深邃，兩人來到了一處名為「彼岸」的空間）\n四周星光璀璨，彷彿置身於浩瀚的銀河中心。", bg: "#0a0a2a" },
+                { speaker: "鈴仙凪人", text: "沒想到……居然還有這樣的地方。", bg: "#0a0a2a" },
+                { speaker: "布蕾蒂雅", text: "宇宙浩瀚，你不知道的事情可還多著呢。\n不過，你可別誤會了。我特地出手救你，並不是純粹出自於好心喔。", bg: "#0a0a2a" },
+                { speaker: "鈴仙凪人", text: "……我就知道天底下沒有白吃的午餐。", bg: "#0a0a2a" },
+                { speaker: "布蕾蒂雅", text: "作為交換，你將成為「紀錄者」。\n去親眼見證某些世界的發展，並在其中尋找到能夠代表著自己在那個世界經歷的痕跡。", bg: "#0a0a2a" },
+                { speaker: "鈴仙凪人", text: "做這種事……有什麼特別的意義嗎？", bg: "#0a0a2a" },
+                { speaker: "布蕾蒂雅", text: "誰知道呢？但至少……你未來的人生經歷會變得非常豐富喔。", bg: "#0a0a2a" },
+                { speaker: "鈴仙凪人", text: "喔。", bg: "#0a0a2a" },
+                { speaker: "布蕾蒂雅", text: "雖然我很想立刻讓你開始身為紀錄者的旅行，但看在你剛經歷那起事件的份上，我建議你先好好休息吧。", bg: "#0a0a2a", nextChapter: 2 }
+            ];
+        }
+
+        function getPart2() {
+            return [
+                { speaker: "", text: "（經過了一段時間的休息後，鈴仙凪人再次找到了布蕾蒂雅）", bg: "#0a0a2a" },
+                { speaker: "布蕾蒂雅", text: "看來你似乎休息好了。\n不過在開始你的旅途之前，我有義務測試一下你的戰鬥能力。", bg: "#0a0a2a" },
+                { speaker: "", text: "（布蕾蒂雅從某處拿出了一本書）", bg: "#0a0a2a" },
+                { speaker: "布蕾蒂雅", text: "我先問你，你熟悉 QTE 的戰鬥方式嗎？", bg: "#0a0a2a", choices: [{text: "會", valid: true}, {text: "不會", valid: false}] },
+                { speaker: "布蕾蒂雅", text: "不錯，那你需要新手教學嗎？", bg: "#0a0a2a", choices: [ {text: "需要", valid: true, boss: "tutorial"}, {text: "不需要", valid: true, boss: "dummy"} ] }
+            ];
+        }
+
+        function getPart3(bossDefeated) {
+            let reviewLine = "";
+            if (bossDefeated === 'tutorial') { reviewLine = "表現得一般般吧，但勉強還在可接受的範圍內。"; } 
+            else if (bossDefeated === 'dummy') { reviewLine = "乾脆俐落。看來你已經完全準備好了。"; }
+            else { reviewLine = "沒想到你居然能活著回來。"; } 
+
+            return [
+                { speaker: "布蕾蒂雅", text: reviewLine, bg: "#0a0a2a" },
+                { speaker: "布蕾蒂雅", text: "既然暖身完畢，那就可以正式開始你的第一次旅途了。", bg: "#0a0a2a" },
+                { speaker: "鈴仙凪人", text: "喂，等等，我本人什麼話都還沒說啊！", bg: "#0a0a2a" },
+                { speaker: "布蕾蒂雅", text: "誰理你。", bg: "#0a0a2a" },
+                { speaker: "", text: "（布蕾蒂雅完全無視凪人的抗議，直接一腳將他踹進了星之門）", bg: "#000" },
+                { speaker: "布蕾蒂雅", text: "希望你的第一次旅途一切順利……不過，大概是不會太順利啦。", bg: "#000" },
+                { speaker: "鈴仙凪人", text: "咳……咳咳！可惡，那個叫布蕾蒂雅的傢伙，居然直接把我踹進來……這到底是什麼鬼地方？", bg: "#e0e6ed", textColor: "#2c3e50" },
+                { speaker: "", text: "四周白茫茫的一片，狂風夾雜著暴雪，氣溫低得彷彿連血液都要凍結。", bg: "#e0e6ed", textColor: "#2c3e50" },
+                { speaker: "鈴仙凪人", text: "（不行……失溫太嚴重了……感覺隨時都會倒下……）", bg: "#e0e6ed", textColor: "#2c3e50" },
+                { speaker: "", text: "不出一會兒，凪人的體力便到達極限，倒在了軟綿綿的積雪中。", bg: "#e0e6ed", textColor: "#2c3e50" },
+                { speaker: "", text: "在他意識即將徹底陷入黑暗的最後一刻——\n（叮鈴……叮鈴……）", bg: "#e0e6ed", textColor: "#2c3e50" },
+                { speaker: "", text: "他隱約聽見了，某種清脆的鈴鐺聲正在朝他緩緩靠近。\n隨後，鈴仙凪人徹底失去了意識。", bg: "#000", textColor: "#fff" },
+                { speaker: "", text: "（溫暖的觸感包裹著身體，耳邊傳來劈啪作響的柴火聲。）", bg: "#3e2723" },
+                { speaker: "", text: "再次睜開眼時，凪人發現自己回到了彼岸的圖書館。他正舒服地躺在沙發上，享受著壁爐帶來的溫度。", bg: "#3e2723" },
+                { speaker: "布蕾蒂雅", text: "喲，醒來啦？", bg: "#3e2723" },
+                { speaker: "鈴仙凪人", text: "喂喂喂！把我一腳踹進那個會冷死人的鬼地方，妳就沒有什麼別的話想說嗎！？", bg: "#3e2723" },
+                { speaker: "布蕾蒂雅", text: "哎呀，這可不能怪我。我怎麼會知道星之門會把你傳送到那種極端環境？", bg: "#3e2723" },
+                { speaker: "鈴仙凪人", text: "何意味？妳在耍我嗎？", bg: "#3e2723" },
+                { speaker: "布蕾蒂雅", text: "解釋起來很麻煩啦……不過我保證，下次『絕對』不會再發生這種情況了。", bg: "#3e2723" },
+                { speaker: "布蕾蒂雅", text: "撇開這個不談，這隻兔子是你帶回來的特產嗎？", bg: "#3e2723" },
+                { speaker: "", text: "布蕾蒂雅單手拎起一隻毛茸茸的白兔。那隻兔子似乎對這種粗魯的抓法非常反感，正拼命地蹬著短腿四處掙扎。", bg: "#3e2723" },
+                { speaker: "鈴仙凪人", text: "兔子？哪來的？", bg: "#3e2723" },
+                { speaker: "布蕾蒂雅", text: "從你剛剛差點凍死的那個世界，跟著你一起帶回來的啊。", bg: "#3e2723" },
+                { speaker: "布蕾蒂雅", text: "既然你們兩個相遇即是緣分，要不……你來給牠取個名字？", bg: "#3e2723" },
+                { speaker: "鈴仙凪人", text: "我看妳純粹是懶得動腦想名字，才丟給我的吧？\n隨便啦，那就叫……「鈴月仙兔」好了。", bg: "#3e2723" },
+                { speaker: "布蕾蒂雅", text: "超爛。完全沒有品味。\n不如叫「鈴仙月兔」吧，聽起來順口多了。", bg: "#3e2723" },
+                { speaker: "", text: "於是，這隻名為鈴仙月兔的奇妙生物，「算是」正式成為了他們的夥伴。", bg: "#3e2723" },
+                { speaker: "", text: "【序章：星空彼方的約定 —— 完】\n(點擊螢幕返回主選單)", bg: "#1a1a2e" }
+            ];
+        }
+
+        function getChapter1_Part1() { return [
+            { speaker: "", text: "（滴答……滴答……）\n意識沉入深海，一段模糊的過往在夢境中浮現。", bg: "#4b3832" }, 
+            { speaker: "？？？", text: "「████，你看！那裡有兔兔！」", bg: "#4b3832" },
+            { speaker: "", text: "在孤兒院偏僻的廢棄物堆積處，一位關係要好的朋友拉著他的手，興奮地指著角落。", bg: "#4b3832" },
+            { speaker: "鈴仙凪人", text: "（……不行，這個社會可不是什麼溫馨的童話。）\n（如果讓牠們繼續留在這裡，被大人發現的話，一定會遭遇不測的。）", bg: "#4b3832" },
+            { speaker: "", text: "年幼的他深知現實的殘酷。為了保護牠們，他沉下臉，打算狠下心將這對兔子驅逐出孤兒院。", bg: "#4b3832" },
+            { speaker: "鈴仙凪人", text: "「走開！別留在這裡！」", bg: "#4b3832" },
+            { speaker: "", text: "然而，當他轉頭看見朋友那瞬間黯淡下來、充滿悲傷的表情時，他剛抬起的手還是僵住了。", bg: "#4b3832" },
+            { speaker: "鈴仙凪人", text: "「……隨便你。要是發生什麼事，我可不管。」", bg: "#4b3832" },
+            { speaker: "", text: "（夢境的畫面逐漸破碎、消散……）", bg: "#1a1a2e" },
+            { speaker: "", text: "鈴仙凪人緩緩睜開眼睛。", bg: "#3e2723" }, 
+            { speaker: "鈴仙凪人", text: "「好重……」\n（他無奈地看著正趴在自己胸口上呼呼大睡的「鈴仙月兔」，嘆了口氣。）", bg: "#3e2723" },
+            { speaker: "", text: "片刻後，一人一兔來到了布蕾蒂雅的面前。", bg: "#3e2723" },
+            { speaker: "布蕾蒂雅", text: "「出發之前，我得給你個忠告。」", bg: "#3e2723" },
+            { speaker: "布蕾蒂雅", text: "「你要去的地方，是一個被『永夜』籠罩的城市。\n在那裡，『自由』與『白晝』是極其陌生的詞彙。」", bg: "#3e2723" },
+            { speaker: "布蕾蒂雅", text: "「鈴仙凪人，可千萬不要迷失了。\n當雙方同時向你伸出橄欖枝時，只要做出你心中認為正確的選擇就好。」", bg: "#3e2723" },
+            { speaker: "", text: "還沒等凪人反應過來，布蕾蒂雅已經毫不客氣地抬起腳，再次將他連人帶兔踹進了深邃的星之門裡。", bg: "#000" },
+            { speaker: "", text: "（經過一陣天旋地轉，凪人與月兔重重地摔在了冰冷的地面上。）", bg: "#1c1c1c" },
+            { speaker: "鈴仙凪人", text: "「痛... 這是哪裡？」", bg: "#1c1c1c" },
+            { speaker: "", text: "映入眼簾的是一片荒蕪的廢墟。天空中沒有星光，只有無盡的漆黑。\n路邊殘破的路燈正發出『滋滋』的微弱電流聲，勉強照亮了周圍。", bg: "#1c1c1c" },
+            { speaker: "鈴仙月兔", text: "「啾啾！」\n（月兔抖了抖身上的灰塵，好奇地東張西望。）", bg: "#1c1c1c" },
+            { speaker: "鈴仙凪人", text: "「那個塔樓... 也許我們該往那裡走。」", bg: "#1c1c1c" },
+            { speaker: "", text: "正當他們準備動身時，前方的陰影處傳來了沉重的金屬摩擦聲。\n一台破舊不堪的戰鬥型機器人緩緩駛出。", bg: "#1c1c1c" },
+            { speaker: "鈴仙凪人", text: "「那是... 戰鬥型機器人？看來就算變成了廢鐵，也沒有忘記自己『清掃者』的本分啊...」", bg: "#1c1c1c" },
+            { speaker: "", text: "「喀啦。」\n凪人不小心踩碎了一塊鬆動的碎石，清脆的聲音在寂靜的廢墟中被無限放大。", bg: "#1c1c1c", textColor: "#ff6b6b" },
+            { speaker: "清掃者", text: "【警告：偵測到未註冊生命體。開始執行清除程序。】", bg: "#300" },
+            { speaker: "系統", text: "【突發事件：清掃者的追擊！】\n準備進行連續 10 次的極限迴避！", bg: "#000", action: "run_minigame" }
+        ];}
+
+        function getChapter1_Part2() { return [
+            { speaker: "鈴仙凪人", text: "「呼……呼……等等，後面的引擎聲怎麼還沒消失！？」", bg: "#1c1c1c" },
+            { speaker: "", text: "即便凪人已經拼盡全力閃避，但清掃者如同附骨之蛆，依然緊緊跟在他們身後，機槍管的紅光越發刺眼。", bg: "#1c1c1c" },
+            { speaker: "鈴仙凪人", text: "「這樣逃下去根本就不是辦法，鈴仙月兔，我們得讓它停下來。」", bg: "#1c1c1c" },
+            { speaker: "鈴仙月兔", text: "「啾啾！」\n（月兔從凪人懷裡跳了出來，擺出了戰鬥的架勢。）", bg: "#1c1c1c" },
+            { speaker: "系統", text: "無路可退！請選擇迎戰的對象：", bg: "#1a1a2e",
+              choices: [
+                  { text: "鈴仙凪人 (拔刀迎擊)", valid: true, boss: "cleaner", char: "nagito" },
+                  { text: "鈴仙月兔 (飛踢出擊)", valid: true, boss: "cleaner", char: "tsukito" }
+              ]
+            }
+        ];}
+
+        function getChapter1_Part3() { return [
+            { speaker: "鈴仙凪人", text: "呼……終於結束了嗎？", bg: "#1c1c1c" },
+            { speaker: "", text: "鈴仙月兔上前查看清掃者的狀態，用後腿踢了踢它幾下。\n發現沒動靜後，便跳回到了凪人身旁。", bg: "#1c1c1c" },
+            { speaker: "鈴仙凪人", text: "走吧，離開這個鬼地方。", bg: "#1c1c1c" },
+            { speaker: "", text: "但就在這時，身後的清掃者突然發出了動靜。\n它還沒有徹底報廢，殘破的機體正掙扎著重新站起身。", bg: "#1c1c1c" },
+            { speaker: "鈴仙凪人", text: "不好！", bg: "#300", textColor: "#ff6b6b" },
+            { speaker: "", text: "現在這種情況，他已經來不及閃避了。", bg: "#300" },
+            { speaker: "", text: "——砰！\n就在這時，一聲槍響傳來。", bg: "#fff", textColor: "#000" },
+            { speaker: "", text: "子彈精準地命中了清掃者防禦最薄弱的地方。", bg: "#1c1c1c" },
+            { speaker: "", text: "清掃者這下是真的報廢了，徹底失去機能，倒在地上。", bg: "#1c1c1c" },
+            { speaker: "", text: "還不等凪人從震驚中回過神，一道陌生的女聲傳來。", bg: "#1c1c1c" },
+            { speaker: "？？？", text: "是沒見過的生面孔呢。\n在這種地方，居然還會有人存在。", bg: "#1c1c1c" },
+            { speaker: "鈴仙凪人", text: "妳是誰？", bg: "#1c1c1c" },
+            { speaker: "？？？", text: "在讓別人說出自己的名字前，不應該先自報家門嗎？", bg: "#1c1c1c" },
+            { speaker: "鈴仙凪人", text: "妳很可疑。", bg: "#1c1c1c" },
+            { speaker: "？？？", text: "你同樣也很可疑喔。\n不如……我們來握手吧。", bg: "#1c1c1c" },
+            { speaker: "鈴仙凪人", text: "我憑什麼要和妳握手？", bg: "#1c1c1c" },
+            { speaker: "？？？", text: "就憑我剛剛救了你。", bg: "#1c1c1c" },
+            { speaker: "", text: "凪人自知理虧，嘆了口氣，還是伸出手握住對方。", bg: "#1c1c1c" },
+            { speaker: "", text: "但是，雙手相握的瞬間，他突然感到一陣強烈的暈眩。", bg: "#1c1c1c" },
+            { speaker: "鈴仙凪人", text: "唔……妳做了什麼？", bg: "#000" },
+            { speaker: "？？？", text: "只是為了讓你能夠更好地對話罷了。", bg: "#000" },
+            { speaker: "", text: "接著，凪人便失去了意識，倒了下去。", bg: "#000" },
+            { speaker: "", text: "（數小時後...）", bg: "#000", textColor: "#aaa", nextChapter: 6 }
+        ];}
+
+        function getChapter1_Part4() { return [
+            { speaker: "", text: "（凪人在一個陌生的地方緩緩睜開眼睛。）", bg: "#1a252c" },
+            { speaker: "", text: "這裡看起來像是一處廢棄的實驗室，但周圍的生活痕跡顯示，這裡依然有人居住。", bg: "#1a252c" },
+            { speaker: "？？？", text: "你醒了？", bg: "#1a252c" },
+            { speaker: "鈴仙凪人", text: "妳這傢伙，對我做了什麼？！", bg: "#1a252c" },
+            { speaker: "？？？", text: "別緊張，我什麼事情都沒對你做。\n現在，我們可以繼續剛剛的話題了。", bg: "#1a252c" },
+            { speaker: "？？？", text: "你是誰？", bg: "#1a252c" },
+            { speaker: "", text: "凪人眼見眼前這女人毫不講理，但自己現在又處於劣勢鬥不過她，只好乖乖回答。", bg: "#1a252c" },
+            { speaker: "鈴仙凪人", text: "……鈴仙凪人。那傢伙是鈴仙月兔。", bg: "#1a252c" },
+            { speaker: "", text: "凪人瞥見一旁的鈴仙月兔，牠也被這位女人一起帶過來了，正縮在角落。", bg: "#1a252c" },
+            { speaker: "？？？", text: "不錯，我喜歡這麼老實的人。", bg: "#1a252c" },
+            { speaker: "艾拉露恩", text: "我的名字是艾拉露恩。", bg: "#1a252c" },
+            { speaker: "鈴仙凪人", text: "所以妳剛剛到底對我做了什麼？", bg: "#1a252c" },
+            { speaker: "艾拉露恩", text: "我對你下藥了。", bg: "#1a252c" },
+            { speaker: "鈴仙凪人", text: "？", bg: "#1a252c" },
+            { speaker: "艾拉露恩", text: "你大概在十天之內就會因為毒發而死。若你還想活著，就得在我手下賣力工作。", bg: "#1a252c" },
+            { speaker: "鈴仙凪人", text: "初次見面就這樣對待，妳好誇張喔。", bg: "#1a252c" },
+            { speaker: "艾拉露恩", text: "在我確認你是否值得相信之前，只能先用這種方式約束你了。", bg: "#1a252c" },
+            { speaker: "", text: "【第一章：永夜之城 —— 第三幕 完】\n(點擊螢幕可進入下一幕)", bg: "#1a1a2e", nextChapter: 7 }
+        ];}
+
+        function getChapter1_Part5() { return [
+            { speaker: "鈴仙凪人", text: "艾拉露恩那傢伙，要我去找那什麼『沉寂之心』，說是需要那個東西對抗赫爾墨斯⋯⋯", bg: "#1a252c" },
+            { speaker: "鈴仙凪人", text: "不過，為什麼事情會變成這樣啊？！", bg: "#300", textColor: "#ff6b6b" },
+            { speaker: "", text: "凪人與鈴仙月兔此刻正身處於一條狹窄的通道內，四周密佈著致命的紅色雷射光束。", bg: "#300" },
+            { speaker: "", text: "（時間回到幾小時前……）", bg: "#000", textColor: "#aaa" },
+            { speaker: "艾拉露恩", text: "聽好了鈴仙凪人，你知道這個世界是個被黑夜籠罩的城市吧？\n而這一切的罪魁禍首，便是佔據中央塔樓的『赫爾墨』。", bg: "#1a252c" },
+            { speaker: "艾拉露恩", text: "那傢伙可不是能夠隨便對付的。為了擊敗她，我需要取回曾經研發的一個道具——『沉寂之心』。", bg: "#1a252c" },
+            { speaker: "艾拉露恩", text: "鈴仙凪人，就由你來替我把它取回。", bg: "#1a252c" },
+            { speaker: "", text: "（時間回到現在……）", bg: "#000", textColor: "#aaa" },
+            { speaker: "鈴仙凪人", text: "那傢伙真是討人厭，居然把這種苦差事丟給我。", bg: "#300" },
+            { speaker: "系統", text: "【突發事件：穿越致命雷射網！】\n看準綠色安全區前進，避免觸發高溫雷射！", bg: "#111", action: "laser_minigame" }
+        ];}
+
+        function getChapter1_Part6() { return [
+            { speaker: "鈴仙凪人", text: "呼... 總算是活著過來了。這到底是什麼鬼防禦系統？", bg: "#1c1c1c" },
+            { speaker: "鈴仙月兔", text: "啾啾！", bg: "#1c1c1c" },
+            { speaker: "", text: "（成功穿越了危險的雷射通道後，凪人與鈴仙月兔來到了存放『沉寂之心』的房間門前。）", bg: "#1c1c1c" },
+            { speaker: "", text: "出乎意料的是，這裡的大門居然是敞開的，就好像在刻意歡迎他們進去一樣。", bg: "#1c1c1c" },
+            { speaker: "鈴仙凪人", text: "……太安靜了。簡直就像個陷阱。", bg: "#1c1c1c" },
+            { speaker: "", text: "雖然心中充滿疑慮，但為了達成目的，凪人與月兔還是小心翼翼地走進了房間。", bg: "#2c3e50" },
+            { speaker: "", text: "就在凪人伸手，打算就這樣取走台座上的『沉寂之心』時——", bg: "#2c3e50" },
+            { speaker: "", text: "——砰！\n身後的金屬大門突然毫無預警地重重關上。", bg: "#000", textColor: "#ff6b6b" },
+            { speaker: "", text: "伴隨著一陣『嘶嘶』聲，四周的牆壁縫隙開始溢出某種刺鼻的未知氣體。", bg: "#2e4053" },
+            { speaker: "鈴仙凪人", text: "糟了！果不其然是陷阱！", bg: "#2e4053" },
+            { speaker: "", text: "察覺情況不妙，凪人眼疾手快，一把將台座上的『沉寂之心』扯了下來，塞進懷裡。", bg: "#2e4053" },
+            { speaker: "", text: "接著他迅速環顧四周，尋找逃生的路線。\n很快地，他的目光鎖定在天花板角落的一個通風口上。", bg: "#2e4053" },
+            { speaker: "鈴仙凪人", text: "鈴仙月兔！把那個通風口的百葉窗踹開！", bg: "#2e4053" },
+            { speaker: "鈴仙月兔", text: "啾啾！", bg: "#2e4053" },
+            { speaker: "", text: "（月兔用力一蹬，精準的飛踢瞬間將通風口的鐵柵欄踹得粉碎。）", bg: "#2e4053" },
+            { speaker: "", text: "在氣體徹底瀰漫整個房間之前，一人一兔迅速鑽進了狹窄的通風管道中……", bg: "#000" },
+            { speaker: "", text: "（數小時後...）", bg: "#000", textColor: "#aaa", nextChapter: 9 }
+        ];}
+
+        function getChapter1_Part7() { return [
+            { speaker: "", text: "（不久後，凪人帶著『沉寂之心』回到了實驗室。）", bg: "#1a252c" },
+            { speaker: "艾拉露恩", text: "嗯，做得很好，鈴仙凪人。", bg: "#1a252c" },
+            { speaker: "鈴仙凪人", text: "妳做的這一切究竟是為了什麼？", bg: "#1a252c" },
+            { speaker: "艾拉露恩", text: "我想奪回白晝，回到『自由』的時光。", bg: "#1a252c" },
+            { speaker: "艾拉露恩", text: "在我解析完畢沉寂之心之前，你可以去中央都市逛逛。", bg: "#1a252c" },
+            { speaker: "鈴仙凪人", text: "明知道那裡是赫爾墨斯的根據地，卻還要我過去？", bg: "#1a252c" },
+            { speaker: "艾拉露恩", text: "你是「變數」，她不敢對你怎麼樣的。", bg: "#1a252c" },
+            { speaker: "", text: "凪人懶得和艾拉露恩爭執，便帶上鈴仙月兔去了中央都市。", bg: "#1a252c" },
+            { speaker: "", text: "（中央都市的街道上...）", bg: "#111", textColor: "#aaa" },
+            { speaker: "", text: "凪人和鈴仙月兔來到了中央都市，這裡的人們看起來就像是個失去自主能力的人偶，只會按照固定的方式行走和做事。", bg: "#0a0a1a" },
+            { speaker: "鈴仙凪人", text: "真是無可救藥了。", bg: "#0a0a1a" },
+            { speaker: "", text: "就在這時，一道清冷的機械聲音響起。", bg: "#0a0a1a" },
+            { speaker: "？？？", text: "鈴仙凪人⋯⋯來自異世界的變數。", bg: "#0a0a1a" },
+            { speaker: "", text: "凪人回頭望去，只見眼前是個白髮紅瞳的女子，不，她並不是人。", bg: "#0a0a1a" },
+            { speaker: "", text: "而是一個由數據構成的身體。", bg: "#0a0a1a" },
+            { speaker: "鈴仙凪人", text: "看來，妳似乎並不想待在幕後看著，赫爾墨斯。", bg: "#0a0a1a" },
+            { speaker: "赫爾墨斯", text: "我必須確保「變數」不會對我的規劃造成影響。", bg: "#0a0a1a" },
+            { speaker: "赫爾墨斯", text: "我知道艾拉露恩那傢伙對你下了藥，迫使你必須服從她，而我剛好有解藥。", bg: "#0a0a1a" },
+            { speaker: "赫爾墨斯", text: "和那個女人合作對你是沒有好處的，我可以保證。", bg: "#0a0a1a" },
+            { speaker: "鈴仙凪人", text: "聽起來妳好像很瞭解她？", bg: "#0a0a1a" },
+            { speaker: "赫爾墨斯", text: "就憑我與她曾經是合作夥伴。", bg: "#0a0a1a" },
+            { speaker: "鈴仙凪人", text: "（合作夥伴！？艾拉露恩從來沒說過這件事……）", bg: "#0a0a1a" },
+            { speaker: "", text: "赫爾墨斯這時拿出了一管解藥遞給凪人。", bg: "#0a0a1a" },
+            { speaker: "赫爾墨斯", text: "當你收下的那一刻，你將會獲得真正的「自由」。", bg: "#0a0a1a" },
+            { speaker: "鈴仙凪人", text: "那妳又該如何保證這個解藥真的是解藥呢？", bg: "#0a0a1a" },
+            { speaker: "赫爾墨斯", text: "騙你對我沒有好處。", bg: "#0a0a1a" },
+            { speaker: "系統", text: "是否要收下赫爾墨斯的解藥？", bg: "#1a1a2e", choices: [
+                { text: "答應 (收下解藥)", valid: true, nextChapter: 10 },
+                { text: "不答應 (拒絕提議)", valid: true, nextChapter: 11 }
+            ]}
+        ];}
+
+        function getChapter1_BadEnd() { return [
+            { speaker: "赫爾墨斯", text: "很高興你願意接受我的提議。", bg: "#0a0a1a" },
+            { speaker: "", text: "（凪人接過解藥並飲下，但隨即感覺到意識逐漸模糊……）", bg: "#000" },
+            { speaker: "鈴仙凪人", text: "這……根本不是解藥……", bg: "#000", textColor: "#ff6b6b" },
+            { speaker: "", text: "那解藥果然有問題。鈴仙凪人最後也成為了被赫爾墨斯操控著的人偶。", bg: "#000" },
+            { speaker: "", text: "在這個永夜之城度過了一輩子……", bg: "#000" },
+            { speaker: "系統", text: "【BAD END：虛假的自由】\n(點擊螢幕回到主選單)", bg: "#300", textColor: "#ff6b6b" } 
+        ];}
+
+        function getChapter1_Part8() { return [
+            { speaker: "鈴仙凪人", text: "抱歉，比起妳，我更相信我自己。", bg: "#0a0a1a" },
+            { speaker: "赫爾墨斯", text: "是嗎？那還真是可惜了。", bg: "#0a0a1a" },
+            { speaker: "赫爾墨斯", text: "若你能夠從這兩個清掃者中活下來，就在下次的見面交鋒吧。", bg: "#0a0a1a" },
+            { speaker: "", text: "（赫爾墨斯的身影化作數據消散，取而代之的是兩台散發著危險紅光的精英清掃者！）", bg: "#1c1c1c" },
+            { speaker: "系統", text: "【切換戰鬥模式：對決 雙子精英清掃者】", bg: "#900", choices: [
+                { text: "鈴仙凪人 (拔刀迎擊)", valid: true, boss: "elite_cleaners", char: "nagito" },
+                { text: "鈴仙月兔 (飛踢出擊)", valid: true, boss: "elite_cleaners", char: "tsukito" }
+            ]}
+        ];}
 
         let storyScript = []; let baseStoryLength = 0; let currentStoryIndex = 0; let isTyping = false; let typeTimer; let fullText = "";
 
+        // ==========================================
+        // ⚔️ 遊戲核心邏輯 (單機 + 連線同步)
         // ==========================================
         let selectedChar = ""; let selectedBoss = ""; let isStoryMode = false;
         const charData = { bredeia: { name: "布蕾蒂雅", hp: 20, sp: 20 }, nagito: { name: "鈴仙凪人", hp: 25, sp: 20 }, tsukito: { name: "鈴仙月兔", hp: 20, sp: 20 } };
