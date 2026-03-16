@@ -54,7 +54,7 @@
         .btn-boss-dummy { background-color: #c0392b; }
         .btn-boss-tutorial { background-color: #27ae60; } 
 
-        /* 🌐 WebRTC 連線介面 */
+        /* 🌐 WebRTC 連線介面專屬樣式 (防手機擠壓) */
         .webrtc-panel { width: 90%; max-width: 500px; text-align: left; flex-shrink: 0; height: auto; margin-bottom: 20px; box-sizing: border-box; }
         .webrtc-textarea { width: 100%; height: 45px; margin-top: 10px; margin-bottom: 5px; background: #222; color: #2ecc71; border: 1px solid #555; border-radius: 5px; padding: 10px; box-sizing: border-box; resize: none; font-size: 12px; font-family: monospace; word-break: break-all; -webkit-user-select: text; user-select: text; }
 
@@ -68,6 +68,8 @@
         
         #story-choices { display: none; justify-content: center; gap: 15px; margin-top: 15px; flex-wrap: wrap;}
         .story-btn { background-color: #3498db; color: #fff; padding: 10px 20px; font-size: 16px; border: 2px solid #fff; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .story-btn.disabled { background-color: #555; color: #888; border-color: #777; cursor: not-allowed; }
+        .story-btn:not(.disabled):active { transform: scale(0.9); }
 
         /* 戰鬥與狀態樣式 */
         .battle-stage { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 20px; width: 100%; max-width: 600px;}
@@ -81,6 +83,7 @@
         
         .ui-panel { border: 2px solid #aaa; padding: 15px; width: 90%; max-width: 450px; margin: 0 auto; border-radius: 10px; background-color: #1e1e1e; min-height: 160px; position: relative;}
         #message-box { font-size: 15px; margin-bottom: 15px; color: #feca57; min-height: 40px; white-space: pre-line; }
+        
         button { padding: 8px 12px; font-size: 15px; cursor: pointer; border-radius: 5px; border: none; font-weight: bold; margin: 4px; }
         
         #action-menu { display: flex; flex-wrap: wrap; justify-content: center; }
@@ -97,6 +100,7 @@
         .qte-target-aoe { position: absolute; height: 100%; width: 10%; background-color: #2ecc71; display: none; }
         .qte-cursor { position: absolute; left: 0%; width: 6px; height: 100%; background-color: #fff; box-shadow: 0 0 5px #fff; z-index: 3; transition: opacity 0.1s; }
         #qte-cursor-2, #qte-cursor-3 { display: none; } 
+        
         .blind-mode .qte-target-main, .blind-mode .qte-target-perfect, .blind-mode .qte-target-aoe { opacity: 0 !important; }
         
         .mash-bar-container { width: 100%; height: 25px; background-color: #333; border: 2px solid #fff; border-radius: 15px; overflow: hidden; margin-bottom: 10px; position: relative; }
@@ -107,18 +111,22 @@
         
         #action-btn, #hold-btn { background-color: #ff9f43; color: #fff; transform: scale(1.1); padding: 12px 30px; font-size: 18px; display: inline-block;}
         #action-btn:active { transform: scale(0.9); }
+        #hold-btn:active { transform: scale(0.95); box-shadow: 0 0 15px #f39c12; }
+
+        /* 雙色 QTE 專用按鈕 */
         #dual-btn-container { display: none; justify-content: center; gap: 20px; }
         .dual-btn { color: #fff; padding: 12px 30px; font-size: 18px; border-radius: 10px; border: 2px solid #fff; font-weight: bold; cursor: pointer; transition: transform 0.1s; }
         .dual-btn:active { transform: scale(0.9); }
         #dual-btn-red { background-color: #e74c3c; box-shadow: 0 0 10px #e74c3c; }
         #dual-btn-blue { background-color: #3498db; box-shadow: 0 0 10px #3498db; }
 
-        /* 小遊戲 */
+        /* 逃跑與雷射小遊戲 */
         .minigame-screen { background-color: #1a1a1a; }
         .run-status-panel { background: rgba(0,0,0,0.8); border: 2px solid #e74c3c; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; margin-bottom: 30px; }
         .run-title { color: #e74c3c; font-size: 22px; margin-top: 0; text-shadow: 0 0 10px #e74c3c; animation: blink 1s infinite;}
         .run-info { font-size: 18px; margin: 10px 0; }
         .minigame-btn { background-color: #3498db; color: #fff; padding: 15px 40px; font-size: 20px; border-radius: 10px; font-weight: bold; margin-top: 10px; border: none; cursor: pointer; }
+        .minigame-btn:active { transform: scale(0.9); }
     </style>
 </head>
 <body>
@@ -127,7 +135,7 @@
         <h1 class="menu-title">星空彼方的約定<br><span style="font-size:18px; color:#aaa;">QTE 戰鬥模擬器</span></h1>
         <button class="menu-btn btn-story" onpointerdown="showScreen('screen-story-select')">📖 劇情模式</button>
         <button class="menu-btn btn-boss-mode" onpointerdown="showScreen('screen-char')">⚔️ 單人挑戰模式</button>
-        <button class="menu-btn" style="background-color: #27ae60;" onpointerdown="showScreen('screen-webrtc')">🌐 雙人連線共鬥</button>
+        <button class="menu-btn" style="background-color: #27ae60;" onclick="showScreen('screen-webrtc')">🌐 雙人連線共鬥</button>
     </div>
 
     <div id="screen-webrtc" class="screen scrollable-screen">
@@ -301,7 +309,12 @@
     </div>
 
     <script>
-        document.addEventListener('contextmenu', event => event.preventDefault());
+        // 解除 TextArea 上的防複製封印
+        document.addEventListener('contextmenu', event => {
+            if (event.target.tagName !== 'TEXTAREA') {
+                event.preventDefault();
+            }
+        });
 
         const bgm = new Audio('bgm.mp3'); bgm.loop = true; bgm.volume = 0.5;
         function changeBGM(bossType) {
@@ -684,15 +697,18 @@
             myChar = charId;
             isStoryMode = false;
 
-            if (isMultiplayer) {
-                showScreen('screen-lobby');
-                let myLabel = isHost ? 'lobby-p1-status' : 'lobby-p2-status';
-                document.getElementById(myLabel).innerText = (isHost ? "1P (房主): " : "2P: ") + `已選擇 ${charData[charId].name}`;
-                sendGameData({ type: 'char_select', charId: charId, isHost: isHost });
-                checkLobbyReady();
-            } else {
-                showScreen('screen-boss'); 
-            }
+            // 【修復】：加入 400 毫秒的轉場緩衝，防止手指離開螢幕時誤觸選王介面的按鈕
+            setTimeout(() => {
+                if (isMultiplayer) {
+                    showScreen('screen-lobby');
+                    let myLabel = isHost ? 'lobby-p1-status' : 'lobby-p2-status';
+                    document.getElementById(myLabel).innerText = (isHost ? "1P (房主): " : "2P: ") + `已選擇 ${charData[charId].name}`;
+                    sendGameData({ type: 'char_select', charId: charId, isHost: isHost });
+                    checkLobbyReady();
+                } else {
+                    showScreen('screen-boss'); 
+                }
+            }, 400);
         }
 
         function checkLobbyReady() {
@@ -709,11 +725,15 @@
         function selectBoss(bossId) { 
             playSound('click'); 
             selectedBoss = bossId; 
-            if (isMultiplayer && isHost) {
-                sendGameData({ type: 'start_battle', bossId: bossId });
-            }
-            changeBGM(selectedBoss); 
-            startBattle(); 
+            
+            // 【修復】：同樣加入轉場緩衝，讓進入戰鬥時不會誤觸攻擊
+            setTimeout(() => {
+                if (isMultiplayer && isHost) {
+                    sendGameData({ type: 'start_battle', bossId: bossId });
+                }
+                changeBGM(selectedBoss); 
+                startBattle(); 
+            }, 400);
         }
 
         function startBattle() {
@@ -773,6 +793,8 @@
                 updateEnemyStatus(e);
             });
 
+            document.getElementById('potion-count').innerText = inventory.potion.count; document.getElementById('ether-count').innerText = inventory.ether.count; document.getElementById('antidote-count').innerText = inventory.antidote.count;
+
             ui.actionMenu.style.display = 'flex'; ui.skillMenu.style.display = 'none'; ui.itemMenu.style.display = 'none'; ui.targetMenu.style.display = 'none'; ui.qteArea.style.display = 'none'; ui.mashArea.style.display = 'none';
             activeEnemyIndex = 0; targetMoving = false; 
             showScreen('screen-battle');
@@ -830,7 +852,19 @@
 
         function openSkillMenu() { ui.actionMenu.style.display = 'none'; ui.skillMenu.style.display = 'block'; ui.msgBox.innerText = "請選擇技能。"; }
         function openItemMenu() { ui.actionMenu.style.display = 'none'; ui.itemMenu.style.display = 'block'; ui.msgBox.innerText = "請選擇道具。"; }
-        function closeSubMenus() { ui.skillMenu.style.display = 'none'; ui.itemMenu.style.display = 'none'; ui.targetMenu.style.display = 'none'; ui.actionMenu.style.display = 'flex'; ui.msgBox.innerText = "請選擇行動。"; }
+        
+        // 【修復】：加入防呆保護，避免在別人的回合手動打開選單
+        function closeSubMenus() { 
+            ui.skillMenu.style.display = 'none'; 
+            ui.itemMenu.style.display = 'none'; 
+            ui.targetMenu.style.display = 'none'; 
+            
+            // 只有在自己的回合時，才允許把動作選單彈出來
+            if (!isMultiplayer || (isHost && mpTurnIndex === 0) || (!isHost && mpTurnIndex === 2)) {
+                ui.actionMenu.style.display = 'flex'; 
+                ui.msgBox.innerText = "請選擇行動。"; 
+            }
+        }
 
         function useItem(itemType) {
             let item = inventory[itemType]; if (item.count <= 0) { playSound('error'); ui.msgBox.innerText = `背包裡的 ${item.name} 已經用完了！`; return; }
@@ -1176,7 +1210,16 @@
             }
         }
 
-        let peerConnection; let dataChannel; 
+        // ==========================================
+        // 🌐 WebRTC 連線與事件處理區
+        // ==========================================
+        let peerConnection; 
+        let dataChannel; 
+        let isMultiplayer = false; 
+        let isHost = false; 
+        let myChar = null; 
+        let peerChar = null;
+        let peerData = { name: '', hp: 0, maxHp: 0 };
         const iceServers = { iceServers: [ { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' } ] };
 
         function setupDataChannel(channel) {
@@ -1184,10 +1227,15 @@
                 isMultiplayer = true;
                 document.getElementById('connection-status').innerText = "狀態：連線成功！2秒後自動進入選角畫面...";
                 document.getElementById('connection-status').style.color = "#f1c40f";
-                playSound('skill'); sendGameData({ type: 'sync', msg: '隊友已成功連線！' });
+                playSound('skill'); 
+                sendGameData({ type: 'sync', msg: '隊友已成功連線！' });
                 setTimeout(() => { showScreen('screen-char'); }, 2000);
             };
-            channel.onclose = () => { isMultiplayer = false; document.getElementById('connection-status').innerText = "狀態：連線已斷開。"; document.getElementById('connection-status').style.color = "#e74c3c"; };
+            channel.onclose = () => { 
+                isMultiplayer = false; 
+                document.getElementById('connection-status').innerText = "狀態：連線已斷開。"; 
+                document.getElementById('connection-status').style.color = "#e74c3c"; 
+            };
             channel.onmessage = (event) => { handleIncomingData(JSON.parse(event.data)); };
         }
 
@@ -1202,50 +1250,81 @@
         async function createHost() {
             playSound('click'); isHost = true;
             try {
-                document.getElementById('connection-status').innerText = "狀態：正在掃描網路路徑..."; document.getElementById('connection-status').style.color = "#aaa";
-                peerConnection = new RTCPeerConnection(iceServers); dataChannel = peerConnection.createDataChannel('qteBattleChannel'); setupDataChannel(dataChannel);
-                const offer = await peerConnection.createOffer(); await peerConnection.setLocalDescription(offer); await waitForIceGathering(peerConnection);
+                document.getElementById('connection-status').innerText = "狀態：正在掃描網路路徑..."; 
+                document.getElementById('connection-status').style.color = "#aaa";
+                peerConnection = new RTCPeerConnection(iceServers); 
+                dataChannel = peerConnection.createDataChannel('qteBattleChannel'); 
+                setupDataChannel(dataChannel);
+                const offer = await peerConnection.createOffer(); 
+                await peerConnection.setLocalDescription(offer); 
+                await waitForIceGathering(peerConnection);
                 document.getElementById('local-sdp').value = JSON.stringify(peerConnection.localDescription);
-                document.getElementById('connection-status').innerText = "狀態：已產生邀請碼，請完整複製給 2P。"; document.getElementById('connection-status').style.color = "#2ecc71";
+                document.getElementById('connection-status').innerText = "狀態：已產生邀請碼，請完整複製給 2P。"; 
+                document.getElementById('connection-status').style.color = "#2ecc71";
             } catch (err) { alert("建立失敗：" + err.message); }
         }
 
         async function joinGame() {
             playSound('click'); isHost = false;
             try {
-                const offerStr = document.getElementById('remote-offer').value.trim(); if (!offerStr) return alert("請先貼上 1P 的邀請碼！");
-                document.getElementById('connection-status').innerText = "狀態：正在解析邀請碼並掃描網路..."; document.getElementById('connection-status').style.color = "#aaa";
-                peerConnection = new RTCPeerConnection(iceServers); peerConnection.ondatachannel = (event) => { dataChannel = event.channel; setupDataChannel(dataChannel); };
-                const offerObj = JSON.parse(offerStr); await peerConnection.setRemoteDescription(offerObj); const answer = await peerConnection.createAnswer(); await peerConnection.setLocalDescription(answer); await waitForIceGathering(peerConnection);
+                const offerStr = document.getElementById('remote-offer').value.trim(); 
+                if (!offerStr) return alert("請先貼上 1P 的邀請碼！");
+                document.getElementById('connection-status').innerText = "狀態：正在解析邀請碼並掃描網路..."; 
+                document.getElementById('connection-status').style.color = "#aaa";
+                peerConnection = new RTCPeerConnection(iceServers); 
+                peerConnection.ondatachannel = (event) => { dataChannel = event.channel; setupDataChannel(dataChannel); };
+                const offerObj = JSON.parse(offerStr); 
+                await peerConnection.setRemoteDescription(offerObj); 
+                const answer = await peerConnection.createAnswer(); 
+                await peerConnection.setLocalDescription(answer); 
+                await waitForIceGathering(peerConnection);
                 document.getElementById('local-answer').value = JSON.stringify(peerConnection.localDescription);
-                document.getElementById('connection-status').innerText = "狀態：已產生回應碼，請完整複製回傳給 1P。"; document.getElementById('connection-status').style.color = "#2ecc71";
+                document.getElementById('connection-status').innerText = "狀態：已產生回應碼，請完整複製回傳給 1P。"; 
+                document.getElementById('connection-status').style.color = "#2ecc71";
             } catch (err) { alert("加入失敗！請檢查括號 {}。\n系統訊息：" + err.message); }
         }
 
         async function connectHost() {
             playSound('click');
             try {
-                const answerStr = document.getElementById('remote-answer').value.trim(); if (!answerStr) return alert("請先貼上 2P 的回應碼！");
-                const answerObj = JSON.parse(answerStr); await peerConnection.setRemoteDescription(answerObj);
+                const answerStr = document.getElementById('remote-answer').value.trim(); 
+                if (!answerStr) return alert("請先貼上 2P 的回應碼！");
+                const answerObj = JSON.parse(answerStr); 
+                await peerConnection.setRemoteDescription(answerObj);
             } catch (err) { alert("確認失敗！請檢查回應碼是否完整。\n系統訊息：" + err.message); }
         }
 
-        function sendGameData(dataObj) { if (isMultiplayer && dataChannel && dataChannel.readyState === 'open') { dataChannel.send(JSON.stringify(dataObj)); } }
+        function sendGameData(dataObj) { 
+            if (isMultiplayer && dataChannel && dataChannel.readyState === 'open') { 
+                dataChannel.send(JSON.stringify(dataObj)); 
+            } 
+        }
 
         function handleIncomingData(data) {
             console.log("收到對手資料:", data);
             if (data.type === 'char_select') {
-                peerChar = data.charId; let peerLabel = data.isHost ? 'lobby-p1-status' : 'lobby-p2-status';
-                document.getElementById(peerLabel).innerText = (data.isHost ? "1P (房主): " : "2P: ") + `已選擇 ${charData[data.charId].name}`; checkLobbyReady();
+                peerChar = data.charId; 
+                let peerLabel = data.isHost ? 'lobby-p1-status' : 'lobby-p2-status';
+                document.getElementById(peerLabel).innerText = (data.isHost ? "1P (房主): " : "2P: ") + `已選擇 ${charData[data.charId].name}`; 
+                checkLobbyReady();
             } else if (data.type === 'start_battle') {
-                selectedBoss = data.bossId; startBattle();
+                selectedBoss = data.bossId; 
+                startBattle();
             } else if (data.type === 'action') {
-                ui.msgBox.innerText = `\n[連線支援] 隊友發動了 ${data.skill}！\n(造成 ${data.damage} 點傷害)`; playSound('hit');
+                ui.msgBox.innerText = `\n[連線支援] 隊友發動了 ${data.skill}！\n(造成 ${data.damage} 點傷害)`; 
+                playSound('hit');
                 if (data.targetId !== undefined && data.currentHp !== undefined) {
                     let target = enemies.find(e => e.id === data.targetId);
                     if (target) {
-                        target.hp = data.currentHp; let hpElem = document.getElementById(`enemy-${target.id}-hp`); if (hpElem) hpElem.innerText = target.hp;
-                        if (target.hp <= 0) { target.isAlive = false; let box = document.getElementById(`enemy-${target.id}-box`); if(box) { box.style.transform = 'scale(0)'; box.style.opacity = '0'; } setTimeout(() => { if(box) box.style.display = 'none'; checkWinCondition(); }, 500); }
+                        target.hp = data.currentHp; 
+                        let hpElem = document.getElementById(`enemy-${target.id}-hp`); 
+                        if (hpElem) hpElem.innerText = target.hp;
+                        if (target.hp <= 0) { 
+                            target.isAlive = false; 
+                            let box = document.getElementById(`enemy-${target.id}-box`); 
+                            if(box) { box.style.transform = 'scale(0)'; box.style.opacity = '0'; } 
+                            setTimeout(() => { if(box) box.style.display = 'none'; checkWinCondition(); }, 500); 
+                        }
                     }
                 }
             } else if (data.type === 'set_turn') {
@@ -1255,27 +1334,43 @@
             } else if (data.type === 'enemy_attack' && !isHost) {
                 let targetEnemy = enemies.find(e => e.id === data.enemyId);
                 if (targetEnemy) {
-                    setEnemyTurnUI(); ui.msgBox.innerText = `敵方 ${targetEnemy.name} 鎖定了 2P (${player.name})！`;
+                    setEnemyTurnUI(); 
+                    ui.msgBox.innerText = `敵方 ${targetEnemy.name} 鎖定了 2P (${player.name})！`;
                     setTimeout(() => { executeSingleEnemyAI(targetEnemy, data.move); }, 1500);
                 }
             } else if (data.type === 'turn_ended' || data.type === 'defend_ended') {
                 if (isHost) advanceMultiplayerTurn();
             } else if (data.type === 'update_p_hp') {
-                peerData.hp = data.hp; document.getElementById('p2-hp').innerText = peerData.hp;
+                peerData.hp = data.hp; 
+                document.getElementById('p2-hp').innerText = peerData.hp;
                 if (peerData.hp <= 0) ui.msgBox.innerText += `\n⚠️ 警告：隊友已經倒下了！`;
             } else if (data.type === 'msg') {
                 ui.msgBox.innerText = data.msg;
             }
         }
 
+        // 📋 一鍵複製功能 (改為按鈕文字提示)
         function copyToClipboard(elementId, btnElement) {
-            playSound('click'); const textToCopy = document.getElementById(elementId).value;
-            if (!textToCopy) { alert("還沒有產生代碼可以複製喔！"); return; }
+            playSound('click'); 
+            const textToCopy = document.getElementById(elementId).value;
+            const originalText = btnElement.innerText;
+            if (!textToCopy) { 
+                btnElement.innerText = "❌ 尚無代碼"; 
+                btnElement.style.backgroundColor = "#e74c3c";
+                setTimeout(() => { btnElement.innerText = originalText; btnElement.style.backgroundColor = "#8e44ad"; }, 1500);
+                return; 
+            }
             navigator.clipboard.writeText(textToCopy).then(() => {
-                const originalText = btnElement.innerText; btnElement.innerText = "✅ 複製成功！"; btnElement.style.backgroundColor = "#2ecc71";
+                btnElement.innerText = "✅ 複製成功！"; 
+                btnElement.style.backgroundColor = "#2ecc71";
                 setTimeout(() => { btnElement.innerText = originalText; btnElement.style.backgroundColor = "#8e44ad"; }, 2000);
-            }).catch(err => { alert("瀏覽器阻擋了複製功能，請直接在文字框手動全選複製。\n錯誤訊息: " + err); });
+            }).catch(err => { 
+                btnElement.innerText = "❌ 複製失敗，請手動複製"; 
+                btnElement.style.backgroundColor = "#e74c3c";
+                setTimeout(() => { btnElement.innerText = originalText; btnElement.style.backgroundColor = "#8e44ad"; }, 2000);
+            });
         }
     </script>
 </body>
 </html>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     <div id="
