@@ -5,6 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>QTE 回合制戰鬥 - 星空彼方的約定</title>
     <style>
+                /* 🌐 WebRTC 連線介面專屬樣式 */
+        .webrtc-panel {
+            width: 90%; 
+            max-width: 500px; 
+            text-align: left; 
+            flex-shrink: 0; /* 【關鍵】防止在手機螢幕上被硬擠壓 */
+            height: auto;   /* 讓內容自然撐開高度 */
+            margin-bottom: 20px; 
+            box-sizing: border-box;
+        }
+        .webrtc-textarea {
+            width: 100%; 
+            height: 60px; 
+            margin-top: 10px; 
+            margin-bottom: 5px;
+            background: #222; 
+            color: #2ecc71; /* 改成終端機感的綠字 */
+            border: 1px solid #555; 
+            border-radius: 5px; 
+            padding: 10px; 
+            box-sizing: border-box; /* 【關鍵】防止輸入框寬度超出外框 */
+            resize: none; 
+            font-size: 12px; 
+            font-family: monospace;
+            word-break: break-all;
+        }
+        
         /* 【重要優化】：全局禁用文字選取、長按選單、與瀏覽器預設手勢 */
         * {
             -webkit-touch-callout: none;
@@ -133,6 +160,29 @@
         <h1 class="menu-title">星空彼方的約定<br><span style="font-size:18px; color:#aaa;">QTE 戰鬥模擬器</span></h1>
         <button class="menu-btn btn-story" onpointerdown="showScreen('screen-story-select')">📖 劇情模式</button>
         <button class="menu-btn btn-boss-mode" onpointerdown="showScreen('screen-char')">⚔️ Boss 挑戰模式</button>
+        <button class="menu-btn" style="background-color: #27ae60;" onpointerdown="showScreen('screen-webrtc')">🌐 雙人連線模式 (Beta)</button>
+    </div>
+
+       <div id="screen-webrtc" class="screen scrollable-screen">
+        <h2 class="menu-subtitle" style="color: #2ecc71;">終端機連線系統 (P2P)</h2>
+        
+        <div class="ui-panel webrtc-panel">
+            <h3 style="color: #f1c40f; margin-top: 0;">▶ 1P (房主) 建立連線</h3>
+            <button class="minigame-btn" style="background-color: #e67e22; padding: 10px 20px;" onpointerdown="createHost()">1. 產生邀請碼</button>
+            <textarea id="local-sdp" class="webrtc-textarea" placeholder="系統將在此產生邀請碼...請複製給 2P" readonly></textarea>
+            <textarea id="remote-answer" class="webrtc-textarea" placeholder="請在此貼上 2P 回傳的【回應碼】"></textarea>
+            <button class="minigame-btn" style="background-color: #27ae60; padding: 10px 20px;" onpointerdown="connectHost()">3. 確認連線</button>
+        </div>
+
+        <div class="ui-panel webrtc-panel">
+            <h3 style="color: #3498db; margin-top: 0;">▶ 2P 加入連線</h3>
+            <textarea id="remote-offer" class="webrtc-textarea" placeholder="請在此貼上 1P 傳來的【邀請碼】"></textarea>
+            <button class="minigame-btn" style="background-color: #3498db; padding: 10px 20px;" onpointerdown="joinGame()">2. 接受邀請並產生回應碼</button>
+            <textarea id="local-answer" class="webrtc-textarea" placeholder="系統將在此產生回應碼...請複製回傳給 1P" readonly></textarea>
+        </div>
+
+        <div id="connection-status" style="font-size: 18px; color: #aaa; font-weight: bold; margin-top: 10px;">狀態：等待連線中...</div>
+        <button class="menu-btn btn-back" style="margin-top: 20px;" onpointerdown="showScreen('screen-menu')">返回標題</button>
     </div>
 
     <div id="screen-story-select" class="screen scrollable-screen">
@@ -814,7 +864,6 @@
             } else if (selectedBoss === 'cleaner') {
                 enemies = [ { id: 0, name: "廢墟清掃者", hp: 60, maxHp: 60, attack: 5, shield: false, isAlive: true, isCharging: false, lastMove: "" } ];
             } else if (selectedBoss === 'elite_cleaners') {
-                // 【精英難度下調，增加容錯率】
                 enemies = [ 
                     { id: 0, name: "精英清掃者 Alpha", hp: 45, maxHp: 45, attack: 5, shield: false, isAlive: true, isCharging: false, lastMove: "" },
                     { id: 1, name: "精英清掃者 Beta", hp: 45, maxHp: 45, attack: 5, shield: false, isAlive: true, isCharging: false, lastMove: "" }
@@ -929,7 +978,6 @@
         }
 
         function configureQteZones(type) {
-            // 【重要修復】：確保不論哪個招式，基礎的游標一定要顯示
             if(ui.qteCursor) { ui.qteCursor.style.display = 'block'; ui.qteCursor.style.opacity = '1'; ui.qteCursor.style.backgroundColor = '#fff'; ui.qteCursor.style.boxShadow = '0 0 5px #fff'; }
             
             if(ui.mainZone) ui.mainZone.style.display = 'none'; 
@@ -945,7 +993,6 @@
             else if (type === 'moonCombo') { qteSpeed = 1.2; targetStart = 65; targetWidth = 25; perfectStart = -1; perfectEnd = -1; ui.mainZone.style.left = targetStart + '%'; ui.mainZone.style.width = targetWidth + '%'; ui.mainZone.style.backgroundColor = '#2ecc71'; ui.mainZone.style.display = 'block'; } 
             else if (type === 'moonHold') { targetStart = 70; targetWidth = 25; perfectStart = 80; perfectEnd = 88; ui.mainZone.style.left = targetStart + '%'; ui.mainZone.style.width = targetWidth + '%'; ui.mainZone.style.backgroundColor = '#2ecc71'; ui.mainZone.style.display = 'block'; ui.perfectZone.style.left = perfectStart + '%'; ui.perfectZone.style.width = (perfectEnd - perfectStart) + '%'; ui.perfectZone.style.backgroundColor = '#f1c40f'; ui.perfectZone.style.display = 'block'; } 
             else if (type === 'defend') { targetStart = 60; targetWidth = 35; ui.mainZone.style.left = targetStart + '%'; ui.mainZone.style.width = targetWidth + '%'; ui.mainZone.style.backgroundColor = '#3498db'; ui.mainZone.style.display = 'block'; if (player.counterStance) { perfectStart = 72; perfectEnd = 82; ui.perfectZone.style.left = perfectStart + '%'; ui.perfectZone.style.width = '10%'; ui.perfectZone.style.backgroundColor = '#ff4757'; } else { perfectStart = 75; perfectEnd = 81; ui.perfectZone.style.left = perfectStart + '%'; ui.perfectZone.style.width = '6%'; ui.perfectZone.style.backgroundColor = '#f1c40f'; } ui.perfectZone.style.display = 'block'; } 
-            // 【新增】：專為雙色 QTE 設計的寬廣防禦區
             else if (type === 'dual_defend') { 
                 targetStart = 50; targetWidth = 40; 
                 ui.mainZone.style.left = targetStart + '%'; ui.mainZone.style.width = targetWidth + '%'; ui.mainZone.style.backgroundColor = '#3498db'; ui.mainZone.style.display = 'block'; 
@@ -1031,13 +1078,12 @@
             if (qteType === 'reverse') {
                 cursorPosition = 100; cursorDirection = -1; ui.qteCursor.style.left = '100%';
             } else if (qteType === 'dual') {
-                // 【優化雙色游標】：拉開間距並降低速度上限，確保反應時間充足
                 dualCursorsData = []; mhStats = { perfects: 0, successes: 0, misses: 0, dmgTaken: 0, counterTriggered: false };
                 for(let i=0; i<3; i++) {
                     let color = Math.random() > 0.5 ? 'red' : 'blue';
                     let colorHex = color === 'red' ? '#e74c3c' : '#3498db';
-                    let speed = 0.8 + Math.random() * 0.8; // 速度下調，最高只有 1.6
-                    let startPos = -(i * 40) - Math.random() * 20; // 游標之間的間距拉開
+                    let speed = 0.8 + Math.random() * 0.8; 
+                    let startPos = -(i * 40) - Math.random() * 20; 
                     let cursorElem = i === 0 ? ui.qteCursor : document.getElementById(`qte-cursor-${i+1}`);
                     cursorElem.style.display = 'block'; cursorElem.style.backgroundColor = colorHex; cursorElem.style.boxShadow = `0 0 8px ${colorHex}`; cursorElem.style.left = startPos + '%';
                     dualCursorsData.push({ id: i, color: color, pos: startPos, speed: speed, active: true, elem: cursorElem, processed: false });
@@ -1141,7 +1187,7 @@
                 else if (issenState === 'waiting') { issenSuccess = false; clearTimeout(issenTimeout); isQteActive = false; issenState = 'done'; ui.msgBox.innerText = `太早拔刀了！破綻百出！`; playSound('miss'); setTimeout(() => { checkQteResult(); }, 1000); } return;
             }
             if (pendingAction === 'safeSlash') {
-if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
+                if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
                     let pos = multiCursorPos[currentCursorTarget];
                     if (pos >= targetStart && pos <= targetStart + targetWidth) { playSound('hit'); aoeHitCount++; ui.mainZone.style.backgroundColor = '#f1c40f'; setTimeout(() => { ui.mainZone.style.backgroundColor = '#3498db'; }, 100); } else { playSound('miss'); }
                     multiCursorActive[currentCursorTarget] = false; let cElem = currentCursorTarget === 0 ? ui.qteCursor : document.getElementById(`qte-cursor-${currentCursorTarget+1}`);
@@ -1189,6 +1235,10 @@ if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
             if (mhStats.counterTriggered && player.counterStance) {
                 playSound('skill'); let counterDmg = 5 + currentEnemyAttack.dmg;
                 msg += `✨ 完美見切！發動反擊造成 ${counterDmg} 點傷害！\n`;
+                
+                // WebRTC 連線傷害廣播
+                if (typeof isMultiplayer !== 'undefined' && isMultiplayer) { sendGameData({ type: 'action', skill: 'Counter (見切)', damage: counterDmg }); }
+
                 attacker.hp = Math.max(attacker.hp - counterDmg, 0); 
                 let hpElem = document.getElementById(`enemy-${attacker.id}-hp`);
                 if(hpElem) hpElem.innerText = attacker.hp;
@@ -1222,13 +1272,15 @@ if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
             
             let finalMsg = isPerfect ? `✨ 完美蓄力！月華爆發！\n` : (isSuccess ? `✨ 月華爆發！\n` : `❌ 蓄力時機錯誤... 軟弱的月光\n`);
             
+            // WebRTC 連線傷害廣播
+            if (typeof isMultiplayer !== 'undefined' && isMultiplayer) { sendGameData({ type: 'action', skill: '月華爆發 (AOE)', damage: dmg }); }
+
             enemies.forEach(target => {
                 if (target.isAlive) {
                     if (target.shield && dmg < 6) { finalMsg += `[${target.name}] 動態裝甲抵擋了衝擊！ `; playSound('guard'); } 
                     else {
                         if(target.shield && dmg === 6) { finalMsg += `[破盾] `; target.shield = false; updateEnemyStatus(target); }
                         
-                        // 【蓄力打斷機制 (AOE)】
                         if (target.isCharging && Math.random() < 0.3) {
                             target.isCharging = false; updateEnemyStatus(target); dmg += 5;
                             finalMsg += `\n💥 [弱點破壞] 打斷了 ${target.name} 的蓄力！ `; playSound('skill');
@@ -1259,6 +1311,10 @@ if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
             let baseAttackDmg = currentEnemyAttack.dmg; let attacker = enemies[activeEnemyIndex];
             if (isPerfect && player.counterStance) {
                 playSound('skill'); let counterDmg = 5 + baseAttackDmg; ui.msgBox.innerText = `✨ 完美見切！${player.name} 彈開了攻擊\n對 ${attacker.name} 發動反擊造成 ${counterDmg} 點傷害！`;
+                
+                // WebRTC 連線傷害廣播
+                if (typeof isMultiplayer !== 'undefined' && isMultiplayer) { sendGameData({ type: 'action', skill: 'Counter (見切)', damage: counterDmg }); }
+
                 attacker.hp = Math.max(attacker.hp - counterDmg, 0); document.getElementById(`enemy-${attacker.id}-hp`).innerText = attacker.hp;
                 if (attacker.hp === 0) { attacker.isAlive = false; let box = document.getElementById(`enemy-${attacker.id}-box`); box.style.transform = 'scale(0)'; box.style.opacity = '0'; setTimeout(() => { box.style.display = 'none'; }, 500); } return; 
             }
@@ -1303,11 +1359,13 @@ if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
             }
             else if (pendingAction === "aoe_bredeia") {
                 let dmg = aoeBaseAttack + (aoeHitCount * 2); let finalMsg = `✨星空爆發！(Combo: ${aoeHitCount})\n`; playSound('skill');
+                
+                // WebRTC 連線傷害廣播
+                if (typeof isMultiplayer !== 'undefined' && isMultiplayer) { sendGameData({ type: 'action', skill: '星空爆發 (AOE)', damage: dmg }); }
+
                 enemies.forEach(target => {
                     if (target.isAlive) {
                         if (target.shield) { finalMsg += `[${target.name}] 護盾抵擋！ `; } else {
-                            
-                            // 【蓄力打斷機制 (AOE)】
                             if (target.isCharging && Math.random() < 0.3) {
                                 target.isCharging = false; updateEnemyStatus(target); dmg += 5;
                                 finalMsg += `\n💥 [弱點破壞] 打斷了 ${target.name} 的蓄力！ `; playSound('skill');
@@ -1328,7 +1386,7 @@ if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
             }
         }
 
-        // 【通用蓄力打斷判定機制 (單體攻擊)】
+        // 【通用蓄力打斷判定機制 (單體攻擊)】與 WebRTC 同步
         function applyDamageToTarget(target, dmg) {
             let interruptMsg = "";
             if (target.isCharging && Math.random() < 0.3) {
@@ -1336,6 +1394,11 @@ if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
                 dmg += 5;
                 interruptMsg = `\n💥 弱點破壞！成功打斷了 ${target.name} 的蓄力！追加 5 點傷害！`;
                 playSound('skill');
+            }
+
+            // 【WebRTC 廣播】如果是在連線模式，就把造成的傷害廣播給對手！
+            if (typeof isMultiplayer !== 'undefined' && isMultiplayer) {
+                sendGameData({ type: 'action', skill: pendingAction, damage: dmg });
             }
 
             target.hp = Math.max(target.hp - dmg, 0); document.getElementById(`enemy-${target.id}-hp`).innerText = target.hp;
@@ -1374,6 +1437,10 @@ if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
             
             if (mashCount >= 15) { 
                 playSound('skill'); ui.msgBox.innerText = `✨ 拼刀勝利！彈開了電鋸並造成反傷！\n對 ${attacker.name} 造成 5 點傷害。`;
+                
+                // WebRTC 連線傷害廣播
+                if (typeof isMultiplayer !== 'undefined' && isMultiplayer) { sendGameData({ type: 'action', skill: 'Defensive Mash', damage: 5 }); }
+
                 attacker.hp = Math.max(attacker.hp - 5, 0); document.getElementById(`enemy-${attacker.id}-hp`).innerText = attacker.hp;
             } else { 
                 playSound('miss'); let dmg = 8; ui.msgBox.innerText = `💥 力量不足！被電鋸狠狠撕裂！\n受到了 ${dmg} 點傷害。`; 
@@ -1451,7 +1518,6 @@ if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
                     setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "連續防禦！", "#3498db", `攻擊！(第 1 擊)`); startQteAnimation(); }, 2000); 
                 }
             }
-            // 【優化】：雙子精英清掃者 AI (傷害與難度下調)
             else if (enemy.name.includes("精英清掃者")) {
                 if (enemy.isCharging) {
                     enemy.isCharging = false; updateEnemyStatus(enemy); enemy.lastMove = "ultimate"; 
@@ -1470,7 +1536,6 @@ if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
                     ui.msgBox.innerText = `${enemy.name} 展開【光學偏移盾】！\n物理防禦大幅提升！`; 
                     activeEnemyIndex++; setTimeout(processEnemyTurnQueue, 2000); 
                 }
-                // 【優化】：雙色游標攻擊！(擴大範圍、降低速度、拉開間距)
                 else if (chosen === "dual_strike") { 
                     qteType = 'dual'; currentEnemyAttack = { name: "雙子協同打擊", dmg: 3, appliesPoison: false };
                     ui.msgBox.innerText = `${enemy.name} 發動【雙子協同打擊】！\n(紅藍游標來襲！按下對應顏色的按鈕防禦！)`; 
@@ -1528,6 +1593,86 @@ if (currentCursorTarget < 3 && multiCursorActive[currentCursorTarget]) {
                 else if (chosen === "fast") { qteSpeed = 2.5; currentEnemyAttack = { name: "急速俯衝", dmg: 3, appliesPoison: false }; ui.msgBox.innerText = `無人機僕從 啟動噴射引擎！\n(極高速衝撞！)`; setTimeout(() => { configureQteZones('defend'); setupQteUI("click", "防禦 / 閃避！", "#3498db", `快速攻擊襲來！`); startQteAnimation(); }, 1500); }
             }
         }
+
+        // ==========================================
+        // 🌐 WebRTC 手動連線系統
+        // ==========================================
+        let peerConnection;
+        let dataChannel;
+        let isMultiplayer = false; 
+        const iceServers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+        function setupDataChannel(channel) {
+            channel.onopen = () => {
+                isMultiplayer = true;
+                document.getElementById('connection-status').innerText = "狀態：連線成功！神經連結已建立！";
+                document.getElementById('connection-status').style.color = "#f1c40f";
+                playSound('skill');
+                // 測試：雙方互相打招呼
+                sendGameData({ type: 'sync', msg: '已成功連接到星空彼方！' });
+            };
+            channel.onclose = () => { isMultiplayer = false; document.getElementById('connection-status').innerText = "狀態：連線已斷開。"; document.getElementById('connection-status').style.color = "#e74c3c"; };
+            channel.onmessage = (event) => { handleIncomingData(JSON.parse(event.data)); };
+        }
+
+        async function createHost() {
+            playSound('click');
+            peerConnection = new RTCPeerConnection(iceServers);
+            dataChannel = peerConnection.createDataChannel('qteBattleChannel');
+            setupDataChannel(dataChannel);
+
+            peerConnection.onicecandidate = (event) => {
+                if (!event.candidate) {
+                    document.getElementById('local-sdp').value = JSON.stringify(peerConnection.localDescription);
+                    document.getElementById('connection-status').innerText = "狀態：已產生邀請碼，請複製給 2P。";
+                }
+            };
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+        }
+
+        async function joinGame() {
+            playSound('click');
+            const offerStr = document.getElementById('remote-offer').value;
+            if (!offerStr) return alert("請先貼上 1P 的邀請碼！");
+
+            peerConnection = new RTCPeerConnection(iceServers);
+            peerConnection.ondatachannel = (event) => { dataChannel = event.channel; setupDataChannel(dataChannel); };
+
+            peerConnection.onicecandidate = (event) => {
+                if (!event.candidate) {
+                    document.getElementById('local-answer').value = JSON.stringify(peerConnection.localDescription);
+                    document.getElementById('connection-status').innerText = "狀態：已產生回應碼，請回傳給 1P。";
+                }
+            };
+            await peerConnection.setRemoteDescription(JSON.parse(offerStr));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+        }
+
+        async function connectHost() {
+            playSound('click');
+            const answerStr = document.getElementById('remote-answer').value;
+            if (!answerStr) return alert("請先貼上 2P 的回應碼！");
+            await peerConnection.setRemoteDescription(JSON.parse(answerStr));
+        }
+
+        function sendGameData(dataObj) {
+            if (isMultiplayer && dataChannel && dataChannel.readyState === 'open') {
+                dataChannel.send(JSON.stringify(dataObj));
+            }
+        }
+
+        function handleIncomingData(data) {
+            console.log("收到對手資料:", data);
+            if (data.type === 'action') {
+                ui.msgBox.innerText += `\n[連線] 對手使用了 ${data.skill}，造成 ${data.damage} 點傷害！`;
+                playSound('hit');
+            } else if (data.type === 'sync') {
+                ui.msgBox.innerText = data.msg;
+            }
+        }
     </script>
 </body>
 </html>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
